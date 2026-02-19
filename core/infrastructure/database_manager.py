@@ -8,11 +8,11 @@ component that handles the lifecycle of all database connections.
 
 from dataclasses import dataclass
 
-from core.ports.interfaces import IDatabase
+from core.ports.infrastructure import IDatabase
 from core.infrastructure.mariadb_adapter import MariaDbAdapter
 from core.infrastructure.sqls_adapter import SqlServerAdapter
 from core.config.settings import settings
-from core.helpers.app_log_helper import logger
+from core.helpers.logger_helper import logger
 
 
 

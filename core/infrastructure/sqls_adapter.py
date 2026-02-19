@@ -12,8 +12,8 @@ from typing import Any
 
 import pyodbc
 
-from core.ports.interfaces import IDatabase
-from core.helpers.app_log_helper import logger
+from core.ports.infrastructure import IDatabase
+from core.helpers.logger_helper import logger
 
 
 class SqlServerAdapter(IDatabase):
