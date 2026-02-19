@@ -13,7 +13,7 @@ class UserType(BaseModel):
     last_name: Optional[str] = Field(default=None, description="The last name of the user")
     unit: Optional[str] = Field(default=None, description="The unit or department the user belongs to")
     job: Optional[str] = Field(default=None, description="The job title or position of the user")
-    sector: Optional[str] = Field(default=None, description="The sector or area of expertise of the user")
+    branche: Optional[str] = Field(default=None, description="The branch or division of the user")
     cpf_cnpj: Optional[str] = Field(default=None, description="The CPF or CNPJ number of the user")
     registration_number: Optional[str] = Field(default=None, description="The registration number or employee ID of the user")
     profile_picture_url: Optional[str] = Field(default=None, description="The URL of the user's profile picture")
@@ -29,7 +29,7 @@ class UserCreateType(BaseModel):
     last_name: Optional[str] = Field(default=None, description="The last name of the user")
     unit_id: Optional[int] = Field(default=None, description="The unit or department the user belongs to")
     job_id: Optional[int] = Field(default=None, description="The job title or position of the user")
-    sector_id: Optional[int] = Field(default=None, description="The sector or area of expertise of the user")
+    branche_id: Optional[int] = Field(default=None, description="The branch or division of the user")
     cpf_cnpj: Optional[str] = Field(default=None, description="The CPF or CNPJ number of the user")
     registration_number: Optional[str] = Field(default=None, description="The registration number or employee ID of the user")
 
@@ -40,7 +40,7 @@ class UserUpdateType(BaseModel):
     last_name: Optional[str] = Field(default=None, description="The last name of the user")
     unit_id: Optional[int] = Field(default=None, description="The unit or department the user belongs to")
     job_id: Optional[int] = Field(default=None, description="The job title or position of the user")
-    sector_id: Optional[int] = Field(default=None, description="The sector or area of expertise of the user")
+    branche_id: Optional[int] = Field(default=None, description="The branch or division of the user")
     cpf_cnpj: Optional[str] = Field(default=None, description="The CPF or CNPJ number of the user")
     registration_number: Optional[str] = Field(default=None, description="The registration number or employee ID of the user")
 
