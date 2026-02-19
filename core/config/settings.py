@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
         os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
     )
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
+    ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
+    # pydantic-settings can parse a JSON array string (e.g. '["http://localhost:3000"]')
+    # directly into a list — no manual json.loads() needed.
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
 
     MARIADB_HOST: str = os.getenv("MARIADB_HOST", "your_mariadb_host")
     MARIADB_PORT: int = int(os.getenv("MARIADB_PORT", "3306"))
@@ -54,6 +59,34 @@ class Settings(BaseSettings):
 
     WHATSAPP_API_URL: str = os.getenv("WHATSAPP_API_URL", "your_whatsapp_api_url")
     WHATSAPP_API_TOKEN: str = os.getenv("WHATSAPP_API_TOKEN", "your_whatsapp_api_token")
+
+    # ── Azure AD / Microsoft Entra ID ──────────────────────────────────────────
+    # AZURE_TENANT_ID: your Directory (tenant) ID from the Azure portal.
+    #   Use "common" to allow any Microsoft account, or your specific tenant GUID
+    #   to restrict login to your organisation only.
+    AZURE_TENANT_ID: str = os.getenv("AZURE_TENANT_ID", "common")
+    # AZURE_CLIENT_ID: the Application (client) ID of YOUR registered app in Azure.
+    #   This is also used as the expected "audience" (aud claim) when validating tokens.
+    AZURE_CLIENT_ID: str = os.getenv("AZURE_CLIENT_ID", "")
+    # AZURE_CLIENT_SECRET: only needed if this service itself must acquire tokens
+    #   (e.g. on-behalf-of flow, or calling downstream Microsoft APIs).
+    #   For pure token *validation*, this is not required but is kept for completeness.
+    AZURE_CLIENT_SECRET: str = os.getenv("AZURE_CLIENT_SECRET", "")
+
+    @property
+    def azure_authority(self) -> str:
+        """Base URL for Azure AD endpoints for the configured tenant."""
+        return f"https://login.microsoftonline.com/{self.AZURE_TENANT_ID}"
+
+    @property
+    def azure_jwks_uri(self) -> str:
+        """Public JSON Web Key Set endpoint — used to verify token signatures."""
+        return f"{self.azure_authority}/discovery/v2.0/keys"
+
+    @property
+    def azure_openid_config_uri(self) -> str:
+        """Well-known OIDC configuration discovery endpoint."""
+        return f"{self.azure_authority}/v2.0/.well-known/openid-configuration"
 
     @property
     def database_url(self) -> str:
@@ -86,5 +119,8 @@ class Settings(BaseSettings):
             f"TrustServerCertificate={self.SQLSERVER_TRUST_SERVER_CERTIFICATE}"
         )
 
-
-settings = Settings()
+try:
+    settings = Settings()
+except Exception as e:
+    print(f"Error loading settings: {e}")
+    raise

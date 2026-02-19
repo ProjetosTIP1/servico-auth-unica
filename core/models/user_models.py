@@ -122,3 +122,31 @@ class UserUpdatePasswordType(BaseModel):
     new_password: str = Field(
         default=..., description="The new password for the user account"
     )
+
+
+# ── Microsoft / Azure AD identity ─────────────────────────────────────────────
+
+
+class MicrosoftUserIdentity(BaseModel):
+    """
+    Value object produced after a Microsoft JWT is successfully validated.
+
+    This is a pure Domain model — it has zero dependency on MSAL or any
+    infrastructure detail. The adapter maps the raw JWT claims to this type
+    so that the rest of the application never touches raw token dicts.
+    """
+
+    oid: str = Field(
+        description="Immutable Azure AD object ID — use this as the stable user key."
+    )
+    email: str = Field(description="User's primary email address (UPN or 'email' claim).")
+    name: Optional[str] = Field(default=None, description="Display name.")
+    given_name: Optional[str] = Field(default=None, description="First name.")
+    family_name: Optional[str] = Field(default=None, description="Last name.")
+    tenant_id: Optional[str] = Field(default=None, description="Azure AD tenant ID (tid claim).")
+    preferred_username: Optional[str] = Field(default=None, description="Preferred login username.")
+    roles: list[str] = Field(
+        default_factory=list,
+        description="App roles assigned to the user in Azure AD (roles claim).",
+    )
+
