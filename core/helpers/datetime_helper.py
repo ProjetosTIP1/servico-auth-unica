@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+
 def get_current_date_context_helper():
     """
     Generate current date context
@@ -10,7 +11,7 @@ def get_current_date_context_helper():
     "current_month": "September 2023", "current_year": 2023,
     "last_month": "August 2023", "last_month_iso": "2023-08" }
     """
-    
+
     current_date = datetime.now()
     current_date_str = current_date.strftime("%B %d, %Y")
     current_date_iso = current_date.strftime("%Y-%m-%d")
@@ -30,6 +31,7 @@ def get_current_date_context_helper():
         "last_month": last_month.strftime("%B %Y"),
         "last_month_iso": last_month.strftime("%Y-%m"),
     }
+
 
 def current_day_formatted() -> str:
     """Returns the current day formatted as 'YYYY-MM-DD'"""

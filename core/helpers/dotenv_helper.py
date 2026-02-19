@@ -1,64 +1,69 @@
 """
 PyInstaller configuration and utilities
 """
+
 import sys
 from pathlib import Path
 from typing import Optional
+
 
 def get_executable_directory() -> Path:
     """
     Get the directory where the executable is located.
     This works both for development and PyInstaller bundled executables.
-    
+
     Returns:
         Path: The directory containing the executable or script
     """
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         # Running in PyInstaller bundle
         return Path(sys.executable).parent
     else:
         # Running in development
         return Path(__file__).parent.parent
 
+
 def get_config_directory() -> Path:
     """
     Get the configuration directory for the application.
     This should be where .env and other config files are located.
-    
+
     Returns:
         Path: The configuration directory path
     """
     exe_dir = get_executable_directory()
-    
+
     # Look for config directory in the same folder as executable
     config_dir = exe_dir / "core/config"
     if not config_dir.exists():
         config_dir.mkdir(exist_ok=True)
-        
+
     return config_dir
+
 
 def find_env_file() -> Optional[Path]:
     """
     Find the .env file in the expected locations.
     Follows the order: executable_dir/config/.env -> executable_dir/.env -> None
-    
+
     Returns:
         Optional[Path]: Path to .env file if found, None otherwise
     """
     exe_dir = get_executable_directory()
-    
+
     # Priority order for .env file locations
     env_locations = [
         exe_dir / "config" / ".env",
         exe_dir / ".env",
-        exe_dir / "core/config" / ".env"  # Fallback for development
+        exe_dir / "core/config" / ".env",  # Fallback for development
     ]
-    
+
     for env_path in env_locations:
         if env_path.exists():
             return env_path
-            
+
     return None
+
 
 def create_sample_env_file() -> None:
     """
@@ -67,7 +72,7 @@ def create_sample_env_file() -> None:
     """
     config_dir = get_config_directory()
     sample_env_path = config_dir / ".env.sample"
-    
+
     if not sample_env_path.exists():
         sample_content = """
 # Copy this file to .env and fill in your actual values
@@ -111,9 +116,9 @@ SQLSERVER_ENCRYPT=<your_value_here>
 WHATSAPP_API_URL=<your_value_here>
 WHATSAPP_API_TOKEN=<your_value_here>
 """
-        
-        with open(sample_env_path, 'w', encoding='utf-8') as f:
+
+        with open(sample_env_path, "w", encoding="utf-8") as f:
             f.write(sample_content)
-        
+
         print(f"Sample configuration file created at: {sample_env_path}")
         print("Please copy it to .env and configure your actual values.")

@@ -7,6 +7,7 @@ It adheres to the Single Responsibility Principle by focusing solely on correlat
 from fastapi import Request
 import uuid
 
+
 async def correlation_id_middleware(request: Request, call_next):
     correlation_id = request.headers.get("X-Correlation-ID")
     if not correlation_id:
