@@ -12,7 +12,7 @@ MAGENTA = "\033[95m"
 RESET = "\033[0m"
 
 
-class AppLogHelper:
+class LoggerHelper:
     """
     Simple logger class for console output with color coding.
 
@@ -119,7 +119,7 @@ class ProgressBar:
     def __init__(self, total: int):
         self.total = total
         self.current = 0
-        self.is_development = settings.environment == "development"
+        self.is_development = settings.DEVELOPMENT_ENV
 
     def update(self):
         self.current += 1
@@ -146,4 +146,4 @@ class ProgressBar:
             print(f"\rPROGRESS |{'-' * 40}| 0.0%", end="\r")
 
 
-logger = AppLogHelper()
+logger = LoggerHelper()
