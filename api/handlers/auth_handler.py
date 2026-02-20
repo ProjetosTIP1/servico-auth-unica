@@ -80,6 +80,7 @@ async def validate_microsoft_token(
         is_new_user=result.is_new_user,
     )
 
+
 @ms_router.get(
     path="/login-url",
     response_model=str,
@@ -97,7 +98,10 @@ async def get_microsoft_login_url(
 
     Returns the URL that the frontend should redirect the user to for Microsoft login.
     """
-    return await service.get_auth_url(redirect_uri="https://localhost:8000/auth/callback", scopes=["User.Read"])
+    return await service.get_auth_url(
+        redirect_uri="https://localhost:8000/auth/callback", scopes=["User.Read"]
+    )
+
 
 @ms_router.post(
     path="/callback",
@@ -123,7 +127,10 @@ async def handle_microsoft_callback(
     The frontend should send the `code` and `redirect_uri` it received from Microsoft
     to this endpoint, which will exchange the code for a token and validate it.
     """
-    raise NotImplementedError("This endpoint is a placeholder for the full OAuth flow. Implement if needed.")
+    raise NotImplementedError(
+        "This endpoint is a placeholder for the full OAuth flow. Implement if needed."
+    )
+
 
 @ms_router.get(
     path="/me",

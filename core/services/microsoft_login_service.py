@@ -101,4 +101,6 @@ class MicrosoftLoginService:
         Returns:
             A URL string that the frontend can redirect the user to for Microsoft login.
         """
-        return await self._ms_auth.get_auth_url(redirect_uri=redirect_uri, scopes=scopes)
+        return await self._ms_auth.get_auth_url(
+            redirect_uri=redirect_uri, scopes=scopes
+        )
