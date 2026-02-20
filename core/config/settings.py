@@ -119,6 +119,7 @@ class Settings(BaseSettings):
             f"TrustServerCertificate={self.SQLSERVER_TRUST_SERVER_CERTIFICATE}"
         )
 
+
 try:
     settings = Settings()
 except Exception as e:

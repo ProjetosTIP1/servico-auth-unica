@@ -14,7 +14,10 @@ from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
 
 from core.models.user_models import MicrosoftUserIdentity
-from core.services.microsoft_login_service import MicrosoftLoginResult, MicrosoftLoginService
+from core.services.microsoft_login_service import (
+    MicrosoftLoginResult,
+    MicrosoftLoginService,
+)
 from core.util.deps import get_microsoft_login_service, require_microsoft_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -25,11 +28,13 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 class MicrosoftTokenRequest(BaseModel):
     """Body for the token-validation endpoint."""
+
     token: str
 
 
 class MicrosoftLoginResponse(BaseModel):
     """Slim public-facing representation of a successful login result."""
+
     oid: str
     email: str
     name: str | None

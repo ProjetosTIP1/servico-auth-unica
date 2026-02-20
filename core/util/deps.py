@@ -27,6 +27,7 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 
 # ── Infrastructure adapter factory ────────────────────────────────────────────
 
+
 @lru_cache(maxsize=1)
 def _get_ms_auth_adapter() -> IMicrosoftAuthService:
     """
@@ -41,6 +42,7 @@ def _get_ms_auth_adapter() -> IMicrosoftAuthService:
 
 # ── Use-case factory ──────────────────────────────────────────────────────────
 
+
 def get_microsoft_login_service(
     ms_auth: IMicrosoftAuthService = Depends(_get_ms_auth_adapter),
 ) -> MicrosoftLoginService:
@@ -49,6 +51,7 @@ def get_microsoft_login_service(
 
 
 # ── Reusable "protected route" dependency ─────────────────────────────────────
+
 
 async def require_microsoft_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),

@@ -25,7 +25,6 @@ which one applies to your architecture:
 """
 
 import asyncio
-import os
 
 from core.infrastructure.microsoft_auth_adapter import (
     MicrosoftAuthAdapter,
@@ -53,23 +52,29 @@ async def demo_validate_token(token: str) -> None:
         print(f"    Roles  : {identity.roles}")
     except MicrosoftAuthError as exc:
         print(f"❌  Token validation failed: {exc}")
+  
+async def demo_get_auth_url() -> None:
+    """
+    SCENARIO B (optional) — generate a Microsoft login URL for frontend redirection.
+
+    This is only needed if your frontend doesn't use MSAL.js and you want to
+    handle the OAuth flow manually. If your frontend uses MSAL.js, it can
+    construct the URL itself and you don't need this method.
+    """
+    adapter = MicrosoftAuthAdapter()
+
+    try:
+        auth_url = await adapter.get_auth_url(
+            redirect_uri="http://localhost:8000/auth/callback",
+            scopes=["User.Read"],
+        )
+        print(f"Microsoft auth URL: {auth_url}")
+    except MicrosoftAuthError as exc:
+        print(f"❌ Failed to generate auth URL: {exc}")
 
 
 async def main() -> None:
-    # Replace this with a real token for an actual test.
-    sample_token = os.getenv("MS_TEST_TOKEN", "paste-a-real-ms-token-here")
-
-    print("=" * 60)
-    print("SCENARIO C: validating an incoming Microsoft JWT")
-    print("=" * 60)
-    await demo_validate_token(sample_token)
-
-    print()
-    print("Next steps:")
-    print("  1. Set AZURE_TENANT_ID and AZURE_CLIENT_ID in your .env file")
-    print("  2. Obtain a real id_token from your frontend (MSAL.js) or")
-    print("     Azure Portal test tool, and set MS_TEST_TOKEN=<token>")
-    print("  3. Run `uvicorn app:app --reload` and call POST /auth/microsoft/validate")
+    await demo_get_auth_url()
 
 
 if __name__ == "__main__":

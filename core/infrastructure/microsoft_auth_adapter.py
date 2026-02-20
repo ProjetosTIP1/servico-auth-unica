@@ -1,8 +1,8 @@
 """
-Microsoft / Azure AD token validation adapter.
+Microsoft / Azure token validation adapter.
 
 This is the ONLY file in the codebase that knows about MSAL, JWKS, or
-the exact shape of Azure AD JWT claims. Everything above this layer
+the exact shape of Azure JWT claims. Everything above this layer
 (services, handlers) works with clean domain types.
 
 Architecture note (DIP):
@@ -11,8 +11,8 @@ Architecture note (DIP):
   on external libraries (msal, jose, httpx). The layers above it MUST NOT.
 """
 
+from msal import ConfidentialClientApplication
 import time
-import logging
 from typing import Any
 
 import httpx
@@ -22,8 +22,7 @@ from jose.exceptions import ExpiredSignatureError, JWTClaimsError
 from core.config.settings import settings
 from core.models.user_models import MicrosoftUserIdentity
 from core.ports.service import IMicrosoftAuthService
-
-logger = logging.getLogger(__name__)
+from core.helpers.logger_helper import logger
 
 # How long to cache the JWKS keys before re-fetching (in seconds).
 _JWKS_CACHE_TTL = 3600  # 1 hour
@@ -55,6 +54,11 @@ class MicrosoftAuthAdapter(IMicrosoftAuthService):
         # JWKS in-memory cache: avoids a network round-trip on every request.
         self._jwks_cache: dict[str, Any] = {}
         self._cache_fetched_at: float = 0.0
+        self._provider = ConfidentialClientApplication(
+            client_id=settings.AZURE_CLIENT_ID,
+            client_credential=settings.AZURE_CLIENT_SECRET,
+            authority=f"https://login.microsoftonline.com/{settings.AZURE_TENANT_ID}",
+        )
 
     # ── Public interface (implements IMicrosoftAuthService) ────────────────────
 
@@ -88,6 +92,76 @@ class MicrosoftAuthAdapter(IMicrosoftAuthService):
 
         return self._map_claims_to_identity(payload)
 
+    async def get_auth_url(self, redirect_uri: str, scopes: list[str]) -> str:
+        """
+        (Optional) Generate the Microsoft login URL for frontend redirection.
+
+        This is only needed if your frontend doesn't use MSAL.js and you want
+        to handle the OAuth flow manually. If your frontend uses MSAL.js, it
+        can construct the URL itself and you don't need this method.
+
+        Args:
+            redirect_uri: The URI that Microsoft should redirect back to after login.
+            scopes: The list of permission scopes to request (e.g. ["User.Read"]).
+
+        Returns:
+            A URL string that the frontend can redirect the user to for Microsoft login.
+        """
+        # This method is left unimplemented for now since the frontend uses MSAL.js,
+        # which can construct the URL itself. If you want to implement this, you can
+        # use MSAL's PublicClientApplication.get_authorization_request_url() method.
+        try:
+            auth_url: str = self._provider.get_authorization_request_url(
+                scopes=scopes,
+                redirect_uri=redirect_uri,
+            )
+            return auth_url
+        except Exception as exc:
+            raise MicrosoftAuthError(
+                f"Failed to generate Microsoft auth URL: {exc}"
+            ) from exc
+
+    async def exchange_code_for_token(
+        self, code: str, redirect_uri: str
+    ) -> MicrosoftUserIdentity:
+        """
+        (Optional) Exchange an authorization code for a token and validate it.
+
+        This is only needed if you're implementing the full OAuth flow in the
+        backend (e.g. for a CLI tool or server-side rendered app). If your
+        frontend uses MSAL.js, it can handle the code exchange itself and you
+        don't need this method.
+
+        Args:
+            code: The authorization code received from Microsoft after login.
+            redirect_uri: The same redirect URI used in the initial auth URL.
+
+        Returns:
+            A `MicrosoftUserIdentity` representing the authenticated user.
+
+        Raises:
+            MicrosoftAuthError: if the code exchange or token validation fails.
+        """
+        # This method is left unimplemented for now since the frontend uses MSAL.js,
+        # which can handle the code exchange itself. If you want to implement this,
+        # you can use MSAL's ConfidentialClientApplication.acquire_token_by_authorization_code() method.
+        try:
+            result = self._provider.acquire_token_by_authorization_code(
+                code=code,
+                scopes=[f"{settings.AZURE_CLIENT_ID}/.default"],
+                redirect_uri=redirect_uri,
+            )
+            if "access_token" in result:
+                return await self.validate_token(result["access_token"])
+            else:
+                raise MicrosoftAuthError(
+                    f"Failed to acquire token: {result.get('error_description', 'Unknown error')}"
+                )
+        except Exception as exc:
+            raise MicrosoftAuthError(
+                f"Failed to exchange code for token: {exc}"
+            ) from exc
+
     # ── Private helpers ────────────────────────────────────────────────────────
 
     async def _get_jwks(self) -> dict[str, Any]:
@@ -101,7 +175,7 @@ class MicrosoftAuthAdapter(IMicrosoftAuthService):
         if self._jwks_cache and (now - self._cache_fetched_at) < _JWKS_CACHE_TTL:
             return self._jwks_cache
 
-        logger.info("Fetching Azure AD JWKS from %s", settings.azure_jwks_uri)
+        logger.info(message=f"Fetching Azure AD JWKS from {settings.azure_jwks_uri}")
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(settings.azure_jwks_uri)

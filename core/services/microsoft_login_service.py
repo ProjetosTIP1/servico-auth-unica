@@ -12,13 +12,11 @@ Architecture notes:
   pass mock implementations in tests, real adapters in production.
 """
 
-import logging
 from dataclasses import dataclass
 
 from core.models.user_models import MicrosoftUserIdentity
 from core.ports.service import IMicrosoftAuthService
-
-logger = logging.getLogger(__name__)
+from core.helpers.logger_helper import logger
 
 
 @dataclass
@@ -30,6 +28,7 @@ class MicrosoftLoginResult:
     indicating whether the user was just created in the local database
     (useful for onboarding flows / first-login welcome screens).
     """
+
     identity: MicrosoftUserIdentity
     is_new_user: bool = False
 
@@ -70,9 +69,7 @@ class MicrosoftLoginService:
         identity = await self._ms_auth.validate_token(token)
 
         logger.info(
-            "Microsoft token validated for user oid=%s email=%s",
-            identity.oid,
-            identity.email,
+            message=f"Microsoft token validated for user oid={identity.oid} email={identity.email}"
         )
 
         # Step 2 — local user provisioning (plug in your UserRepository here)
