@@ -30,17 +30,18 @@ class LoggerHelper:
     """
 
     def __init__(self):
-        self.is_debug = settings.DEBUG
-        self.is_development = settings.DEVELOPMENT_ENV
+        self.is_debug: bool = settings.DEBUG
+        self.is_development: bool = settings.DEVELOPMENT_ENV
 
     def info(self, message: str, correlation_id: str = "") -> None:
         """
         Logs an informational message.
             message (str): The message to log.
             correlation_id (str): An optional correlation ID for tracking requests.
+            error_path (str): An optional error path for logging errors.
         """
         if not correlation_id:
-            correlation_id = get_correlation_id()
+            correlation_id: str = get_correlation_id()
         if self.is_development:
             print(f"{BLUE}INFO {correlation_id} {RESET}{message}")
         else:
@@ -53,39 +54,41 @@ class LoggerHelper:
             correlation_id (str): An optional correlation ID for tracking requests.
         """
         if not correlation_id:
-            correlation_id = get_correlation_id()
+            correlation_id: str = get_correlation_id()
         if self.is_development:
             print(f"{GREEN}SUCCESS {correlation_id} {RESET}{message}")
         else:
             print(f"SUCCESS {correlation_id} {message}")
 
-    def warning(self, message: str, correlation_id: str = "") -> None:
+    def warning(self, message: str, correlation_id: str = "", error_path: str = "") -> None:
         """
         Logs a warning message.
             message (str): The warning message to log.
             correlation_id (str): An optional correlation ID for tracking requests.
+            error_path (str): An optional error path for logging errors.
         """
         if not correlation_id:
-            correlation_id = get_correlation_id()
+            correlation_id: str = get_correlation_id()
         if self.is_development:
-            print(f"{YELLOW}WARNING {correlation_id} {RESET}{message}")
+            print(f"{YELLOW}WARNING {correlation_id} {RESET}{message} {f'-> {error_path}' if error_path else ''}")
         else:
-            print(f"WARNING {correlation_id} {message}")
-            write_on_file(f"WARNING {correlation_id} {message}", correlation_id)
+            print(f"WARNING {correlation_id} {message} {f'-> {error_path}' if error_path else ''}")
+            write_on_file(message=f"WARNING {correlation_id} {message} {f'-> {error_path}' if error_path else ''}", correlation_id=correlation_id)
 
-    def error(self, message: str, correlation_id: str = "") -> None:
+    def error(self, message: str, correlation_id: str = "", error_path: str = "") -> None:
         """
         Logs an error message.
             message (str): The error message to log.
             correlation_id (str): An optional correlation ID for tracking requests.
+            error_path (str): An optional error path for logging errors.
         """
         if not correlation_id:
-            correlation_id = get_correlation_id()
+            correlation_id: str = get_correlation_id()
         if self.is_development:
-            print(f"{RED}ERROR {correlation_id} {RESET}{message}")
+            print(f"{RED}ERROR {correlation_id} {RESET}{message} {f'-> {error_path}' if error_path else ''}")
         else:
-            print(f"ERROR {correlation_id} {message}")
-            write_on_file(f"ERROR {correlation_id} {message}", correlation_id)
+            print(f"ERROR {correlation_id} {message} {f'-> {error_path}' if error_path else ''}")
+            write_on_file(message=f"ERROR {correlation_id} {message} {f'-> {error_path}' if error_path else ''}", correlation_id=correlation_id)
 
     def debug(self, message: str, correlation_id: str = "") -> None:
         """
@@ -94,7 +97,7 @@ class LoggerHelper:
             correlation_id (str): An optional correlation ID for tracking requests.
         """
         if not correlation_id:
-            correlation_id = get_correlation_id()
+            correlation_id: str = get_correlation_id()
         if self.is_debug:
             if self.is_development:
                 print(f"{MAGENTA}DEBUG {correlation_id} {RESET}{message}")
