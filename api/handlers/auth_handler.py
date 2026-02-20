@@ -20,7 +20,7 @@ from core.services.microsoft_login_service import (
 )
 from core.util.deps import get_microsoft_login_service, require_microsoft_user
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+ms_router = APIRouter(tags=["Authentication"])
 
 
 # ── Request / Response schemas ─────────────────────────────────────────────────
@@ -45,8 +45,8 @@ class MicrosoftLoginResponse(BaseModel):
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
 
-@router.post(
-    "/microsoft/validate",
+@ms_router.post(
+    path="/validate",
     response_model=MicrosoftLoginResponse,
     status_code=status.HTTP_200_OK,
     summary="Validate a Microsoft-issued token",
@@ -58,7 +58,7 @@ class MicrosoftLoginResponse(BaseModel):
 )
 async def validate_microsoft_token(
     body: MicrosoftTokenRequest,
-    service: MicrosoftLoginService = Depends(get_microsoft_login_service),
+    service: MicrosoftLoginService = Depends(dependency=get_microsoft_login_service),
 ) -> MicrosoftLoginResponse:
     """
     POST /auth/microsoft/validate
@@ -80,9 +80,53 @@ async def validate_microsoft_token(
         is_new_user=result.is_new_user,
     )
 
+@ms_router.get(
+    path="/login-url",
+    response_model=str,
+    status_code=status.HTTP_200_OK,
+    summary="Get Microsoft login URL",
+    description=(
+        "Returns the URL that the frontend should redirect the user to for Microsoft login."
+    ),
+)
+async def get_microsoft_login_url(
+    service: MicrosoftLoginService = Depends(dependency=get_microsoft_login_service),
+) -> str:
+    """
+    GET /auth/login-url
 
-@router.get(
-    "/me",
+    Returns the URL that the frontend should redirect the user to for Microsoft login.
+    """
+    return await service.get_auth_url(redirect_uri="https://localhost:8000/auth/callback", scopes=["User.Read"])
+
+@ms_router.post(
+    path="/callback",
+    response_model=MicrosoftLoginResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Handle Microsoft login callback",
+    description=(
+        "Handles the callback from Microsoft login. This endpoint is called by the frontend "
+        "after the user has authenticated with Microsoft."
+    ),
+)
+async def handle_microsoft_callback(
+    code: str,
+    redirect_uri: str,
+    service: MicrosoftLoginService = Depends(dependency=get_microsoft_login_service),
+) -> MicrosoftLoginResponse:
+    """
+    POST /auth/callback
+
+    Handles the callback from Microsoft login. This endpoint is called by the frontend
+    after the user has authenticated with Microsoft.
+
+    The frontend should send the `code` and `redirect_uri` it received from Microsoft
+    to this endpoint, which will exchange the code for a token and validate it.
+    """
+    raise NotImplementedError("This endpoint is a placeholder for the full OAuth flow. Implement if needed.")
+
+@ms_router.get(
+    path="/me",
     response_model=MicrosoftUserIdentity,
     status_code=status.HTTP_200_OK,
     summary="Get the current authenticated user",
@@ -92,7 +136,7 @@ async def validate_microsoft_token(
     ),
 )
 async def get_current_user(
-    user: MicrosoftUserIdentity = Depends(require_microsoft_user),
+    user: MicrosoftUserIdentity = Depends(dependency=require_microsoft_user),
 ) -> MicrosoftUserIdentity:
     """
     GET /auth/me
@@ -102,7 +146,7 @@ async def get_current_user(
 
         @router.get("/orders")
         async def list_orders(
-            user: MicrosoftUserIdentity = Depends(require_microsoft_user)
+            user: MicrosoftUserIdentity = Depends(dependency=require_microsoft_user)
         ):
             # `user.oid` is the verified Azure AD user — safe to use.
             ...

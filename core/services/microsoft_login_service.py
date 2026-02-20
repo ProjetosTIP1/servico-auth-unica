@@ -85,3 +85,20 @@ class MicrosoftLoginService:
         is_new_user = False
 
         return MicrosoftLoginResult(identity=identity, is_new_user=is_new_user)
+
+    async def get_auth_url(self, redirect_uri: str, scopes: list[str]) -> str:
+        """
+        (Optional) Generate the Microsoft login URL for frontend redirection.
+
+        This is only needed if your frontend doesn't use MSAL.js and you want
+        to handle the OAuth flow manually. If your frontend uses MSAL.js, it
+        can construct the URL itself and you don't need this method.
+
+        Args:
+            redirect_uri: The URI that Microsoft should redirect back to after login.
+            scopes: The list of permission scopes to request (e.g. ["User.Read"]).
+
+        Returns:
+            A URL string that the frontend can redirect the user to for Microsoft login.
+        """
+        return await self._ms_auth.get_auth_url(redirect_uri=redirect_uri, scopes=scopes)
