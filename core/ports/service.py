@@ -1,5 +1,48 @@
 from abc import ABC, abstractmethod
+
+from core.models.oauth_models import (
+    TokenResponseModel,
+    TokenCreateModel,
+    TokenUpdateModel,
+)
 from core.models.user_models import MicrosoftUserIdentity
+
+
+class ITokenService(ABC):
+    @abstractmethod
+    async def create_access_token(self, token: TokenCreateModel) -> TokenResponseModel:
+        """Create a new access token for the given user information."""
+        pass
+
+    @abstractmethod
+    async def create_refresh_token(self, token: TokenCreateModel) -> TokenResponseModel:
+        """Create a new refresh token for the given user information."""
+        pass
+
+    @abstractmethod
+    async def exchange_access_token(self, access_token: str) -> TokenResponseModel:
+        """Exchanges an existing access token for a new set of access and refresh tokens."""
+        pass
+
+    @abstractmethod
+    async def exchange_refresh_token(self, refresh_token: str) -> TokenResponseModel:
+        """Exchanges an existing refresh token for a new set of access and refresh tokens."""
+        pass
+
+    @abstractmethod
+    async def get_last_refresh_token(self, user_id: str) -> TokenResponseModel:
+        """Retrieve the last refresh token for the given user ID."""
+        pass
+
+    @abstractmethod
+    async def update(self, token: TokenUpdateModel) -> TokenResponseModel:
+        """Update the given token and return the updated token."""
+        pass
+
+    @abstractmethod
+    async def revoke_token(self, token: TokenResponseModel) -> None:
+        """Revoke the given token."""
+        pass
 
 
 class IMicrosoftAuthService(ABC):

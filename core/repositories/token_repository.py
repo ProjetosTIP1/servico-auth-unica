@@ -2,13 +2,13 @@ from core.models.oauth_models import TokenType
 from typing import Any
 from typing import List
 
-from core.ports.repository import TokenRepository
+from core.ports.repository import ITokenRepository
 from core.ports.infrastructure import IDatabase
 from core.models.oauth_models import TokenModel, TokenCreateModel, TokenUpdateModel
 from core.helpers.logger_helper import logger
 
 
-class InMemoryTokenRepository(TokenRepository):
+class InMemoryTokenRepository(ITokenRepository):
     def __init__(self, db: IDatabase):
         self.db: IDatabase = db
 
@@ -116,23 +116,19 @@ class InMemoryTokenRepository(TokenRepository):
             )
             raise Exception(f"Error retrieving last refresh token: {str(e)}")
 
-    async def update(self, token: TokenUpdateModel) -> TokenModel:
-        # Implementation for updating a token in the database and returning the updated token
+    async def get_token_by_string(self, token: str) -> TokenModel | None:
         try:
             query = """
-                UPDATE tokens
-                SET revoked = %s, consumed_at = %s, expires_at = %s, updated_at = NOW()
+                SELECT id, user_id, token, type, parent_token, revoked, consumed_at, expires_at, created_at, updated_at FROM tokens
                 WHERE token = %s
+                LIMIT 1
             """
             result: List[dict[str, Any]] = await self.db.execute_with_params(
-                query, (token.revoked, token.consumed_at, token.expires_at, token.token)
+                query, (token,)
             )
             if not result:
-                raise Exception("Failed to update token")
+                return None
             token_data = result[0]
-            logger.debug(
-                message=f"Token updated with ID: {token_data['id']} for user ID: {token_data['user_id']}"
-            )
             return TokenModel(
                 id=token_data["id"],
                 user_id=token_data["user_id"],
@@ -145,6 +141,38 @@ class InMemoryTokenRepository(TokenRepository):
                 created_at=token_data["created_at"],
                 updated_at=token_data["updated_at"],
             )
+        except Exception as e:
+            logger.error(
+                message=f"Error retrieving token by string: {str(e)}",
+                error_path="TokenRepository.get_token_by_string",
+            )
+            raise Exception(f"Error retrieving token by string: {str(e)}")
+
+    async def update(self, token: TokenUpdateModel) -> TokenModel:
+        # Implementation for updating a token in the database and returning the updated token
+        try:
+            # First, update the record
+            query = """
+                UPDATE tokens
+                SET revoked = COALESCE(%s, revoked), 
+                    consumed_at = COALESCE(%s, consumed_at), 
+                    expires_at = COALESCE(%s, expires_at), 
+                    updated_at = NOW()
+                WHERE token = %s
+            """
+            await self.db.execute_with_params(
+                query, (token.revoked, token.consumed_at, token.expires_at, token.token)
+            )
+
+            # Then fetch and return the updated record
+            updated_token = await self.get_token_by_string(token.token)
+            if not updated_token:
+                raise Exception("Token not found after update")
+
+            logger.debug(
+                message=f"Token updated: {updated_token.id} for user ID: {updated_token.user_id}"
+            )
+            return updated_token
         except Exception as e:
             logger.error(
                 message=f"Error updating token: {str(e)}",
@@ -170,3 +198,20 @@ class InMemoryTokenRepository(TokenRepository):
                 error_path="TokenRepository.revoke_token",
             )
             raise Exception(f"Error revoking token: {str(e)}")
+
+    async def revoke_all_user_tokens(self, user_id: int) -> None:
+        # Implementation for revoking all tokens for a user in the database
+        try:
+            query = """
+                UPDATE tokens
+                SET revoked = TRUE, consumed_at = NOW(), updated_at = NOW()
+                WHERE user_id = %s AND revoked = FALSE
+            """
+            await self.db.execute_with_params(query, (user_id,))
+            logger.debug(message=f"All tokens revoked for user ID: {user_id}")
+        except Exception as e:
+            logger.error(
+                message=f"Error revoking all user tokens: {str(e)}",
+                error_path="TokenRepository.revoke_all_user_tokens",
+            )
+            raise Exception(f"Error revoking all user tokens: {str(e)}")

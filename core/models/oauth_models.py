@@ -70,6 +70,9 @@ class TokenCreateModel(BaseModel):
 
 
 class TokenUpdateModel(BaseModel):
+    token: str = Field(
+        default=..., description="The token string to identify the token to update"
+    )
     revoked: Optional[bool] = Field(
         default=None, description="Indicates whether the token has been revoked"
     )
