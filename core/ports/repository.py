@@ -1,20 +1,21 @@
 from abc import ABC, abstractmethod
 
-from core.models.oauth_models import TokenModel, TokenCreateModel, TokenUpdateModel, TokenResponseModel
+from core.models.oauth_models import TokenModel, TokenCreateModel, TokenUpdateModel
+
 
 class TokenRepository(ABC):
     @abstractmethod
-    async def create_access_token(self, token: TokenCreateModel) -> TokenResponseModel:
+    async def create_access_token(self, token: TokenCreateModel) -> TokenModel:
         """Create a new access token for the given user information."""
         pass
-    
+
     @abstractmethod
-    async def create_refresh_token(self, token: TokenCreateModel) -> TokenResponseModel:
+    async def create_refresh_token(self, token: TokenCreateModel) -> TokenModel:
         """Create a new refresh token for the given user information."""
         pass
-    
+
     @abstractmethod
-    async def get_last_refresh_token(self, user_id: str) -> TokenResponseModel:
+    async def get_last_refresh_token(self, user_id: str) -> TokenModel:
         """Retrieve the last refresh token for the given user ID."""
         pass
 

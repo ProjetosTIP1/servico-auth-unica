@@ -60,7 +60,9 @@ class LoggerHelper:
         else:
             print(f"SUCCESS {correlation_id} {message}")
 
-    def warning(self, message: str, correlation_id: str = "", error_path: str = "") -> None:
+    def warning(
+        self, message: str, correlation_id: str = "", error_path: str = ""
+    ) -> None:
         """
         Logs a warning message.
             message (str): The warning message to log.
@@ -70,12 +72,21 @@ class LoggerHelper:
         if not correlation_id:
             correlation_id: str = get_correlation_id()
         if self.is_development:
-            print(f"{YELLOW}WARNING {correlation_id} {RESET}{message} {f'-> {error_path}' if error_path else ''}")
+            print(
+                f"{YELLOW}WARNING {correlation_id} {RESET}{message} {f'-> {error_path}' if error_path else ''}"
+            )
         else:
-            print(f"WARNING {correlation_id} {message} {f'-> {error_path}' if error_path else ''}")
-            write_on_file(message=f"WARNING {correlation_id} {message} {f'-> {error_path}' if error_path else ''}", correlation_id=correlation_id)
+            print(
+                f"WARNING {correlation_id} {message} {f'-> {error_path}' if error_path else ''}"
+            )
+            write_on_file(
+                message=f"WARNING {correlation_id} {message} {f'-> {error_path}' if error_path else ''}",
+                correlation_id=correlation_id,
+            )
 
-    def error(self, message: str, correlation_id: str = "", error_path: str = "") -> None:
+    def error(
+        self, message: str, correlation_id: str = "", error_path: str = ""
+    ) -> None:
         """
         Logs an error message.
             message (str): The error message to log.
@@ -85,10 +96,17 @@ class LoggerHelper:
         if not correlation_id:
             correlation_id: str = get_correlation_id()
         if self.is_development:
-            print(f"{RED}ERROR {correlation_id} {RESET}{message} {f'-> {error_path}' if error_path else ''}")
+            print(
+                f"{RED}ERROR {correlation_id} {RESET}{message} {f'-> {error_path}' if error_path else ''}"
+            )
         else:
-            print(f"ERROR {correlation_id} {message} {f'-> {error_path}' if error_path else ''}")
-            write_on_file(message=f"ERROR {correlation_id} {message} {f'-> {error_path}' if error_path else ''}", correlation_id=correlation_id)
+            print(
+                f"ERROR {correlation_id} {message} {f'-> {error_path}' if error_path else ''}"
+            )
+            write_on_file(
+                message=f"ERROR {correlation_id} {message} {f'-> {error_path}' if error_path else ''}",
+                correlation_id=correlation_id,
+            )
 
     def debug(self, message: str, correlation_id: str = "") -> None:
         """
