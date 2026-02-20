@@ -19,7 +19,6 @@ from core.infrastructure.microsoft_auth_adapter import (
 from core.repositories.token_repository import ITokenRepository
 from core.models.user_models import MicrosoftUserIdentity
 from core.ports.service import IMicrosoftAuthService
-from core.ports.repository import ITokenRepository
 from core.services.microsoft_login_service import MicrosoftLoginService
 
 # ── Bearer token extractor ─────────────────────────────────────────────────────
@@ -50,6 +49,7 @@ def get_microsoft_login_service(
 ) -> MicrosoftLoginService:
     """Provide a fully wired `MicrosoftLoginService` to the route handler."""
     return MicrosoftLoginService(ms_auth=ms_auth)
+
 
 def get_token_repository() -> ITokenRepository:
     """Provide a new instance of the TokenRepository."""
