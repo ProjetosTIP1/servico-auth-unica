@@ -51,14 +51,21 @@ class InMemoryTokenRepository(ITokenRepository):
             raise Exception(f"Error creating access token: {str(e)}")
 
     async def create_refresh_token(self, token: TokenCreateModel) -> TokenModel:
-        # Implementation for creating a refresh token in the database
+        # Implementation for creating a refresh token in the database. The parent_token refers to the previous refresh token
         try:
             query = """
-                INSERT INTO tokens (user_id, token, type, expires_at)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO tokens (user_id, token, type, parent_token, expires_at)
+                VALUES (%s, %s, %s, %s, %s)
             """
             result: List[dict[str, Any]] = await self.db.execute_with_params(
-                query, (token.user_id, token.token, token.type.value, token.expires_at)
+                query,
+                (
+                    token.user_id,
+                    token.token,
+                    token.type.value,
+                    token.parent_token,
+                    token.expires_at,
+                ),
             )
             if not result:
                 raise Exception("Failed to create refresh token")
@@ -71,7 +78,7 @@ class InMemoryTokenRepository(ITokenRepository):
                 user_id=token.user_id,
                 token=token.token,
                 type=token.type,
-                parent_token=None,
+                parent_token=token.parent_token,
                 expires_at=token.expires_at,
             )
         except Exception as e:

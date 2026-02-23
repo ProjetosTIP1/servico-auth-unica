@@ -92,11 +92,8 @@ class TokenResponseModel(BaseModel):
     refresh_token: str = Field(
         default=..., description="The refresh token string, typically a JWT"
     )
-    token_type: str = Field(
-        default="bearer", description="The type of the token, typically 'bearer'"
-    )
-    expires_in: int = Field(
-        default=..., description="The number of seconds until the access token expires"
+    expires_in: datetime = Field(
+        default=..., description="The timestamp when the token expires"
     )
 
 

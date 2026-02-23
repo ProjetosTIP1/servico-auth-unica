@@ -21,7 +21,7 @@ class TokenService(ITokenService):
         try:
             # Create the access token using the helper function
             access_token: str = create_access_token(data={"sub": token.user_id})
-            token.access_token = access_token
+            token.token = access_token
             token.expires_at = self._get_time_to_expire(TokenType.ACCESS)
 
             # Save the token in the repository (e.g., database)
@@ -31,8 +31,7 @@ class TokenService(ITokenService):
             return TokenResponseModel(
                 access_token=access_token,
                 refresh_token=token.parent_token,
-                token_type="bearer",
-                expires_in=3600,  # Example expiration time in seconds
+                expires_in=self._get_time_to_expire(TokenType.ACCESS),
             )
         except Exception as e:
             logger.error(
@@ -55,8 +54,7 @@ class TokenService(ITokenService):
             return TokenResponseModel(
                 access_token="",
                 refresh_token=refresh_token_str,
-                token_type="bearer",
-                expires_in=0,
+                expires_in=self._get_time_to_expire(TokenType.REFRESH),
             )
         except Exception as e:
             logger.error(
