@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 
 from core.config.settings import settings
+from core.helpers.logger_helper import logger
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/o/token")
@@ -41,8 +42,8 @@ def validate_token(token: str) -> Optional[dict]:
         return None
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    """Create a JWT access token"""
+def create_jwt_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """Create a JWT access or refresh token"""
     try:
         to_encode = data.copy()
         if expires_delta:
@@ -57,5 +58,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         )
         return encoded_jwt
     except Exception as e:
-        print(f"Error creating access token: {e}")
-        raise Exception(f"Error creating access token: {e}")
+        logger.error(
+            message=f"Error creating JWT token: {e}",
+            error_path="AuthenticationHelper.create_jwt_token",
+        )
+        raise Exception(f"Error creating JWT token: {e}")

@@ -1,6 +1,8 @@
+from typing import List
 from abc import ABC, abstractmethod
 
 from core.models.oauth_models import TokenModel, TokenCreateModel, TokenUpdateModel
+from core.models.user_models import UserType, UserCreateType, UserUpdateType
 
 
 class ITokenRepository(ABC):
@@ -37,4 +39,52 @@ class ITokenRepository(ABC):
     @abstractmethod
     async def revoke_all_user_tokens(self, user_id: int) -> None:
         """Revoke all tokens for the given user ID."""
+        pass
+
+
+class IUserRepository(ABC):
+    """Abstract interface for user repository operations"""
+
+    @abstractmethod
+    async def get_user_by_username(self, username: str) -> UserType:
+        """Get user by username"""
+        pass
+
+    @abstractmethod
+    async def get_user_by_id(self, user_id: int) -> UserType:
+        """Get user by ID"""
+        pass
+
+    @abstractmethod
+    async def get_user_hashed_password(self, username: str) -> str:
+        """Get the hashed password for a user by username"""
+        pass
+
+    @abstractmethod
+    async def create_user(
+        self, user_data: UserCreateType, hashed_password: str
+    ) -> UserType:
+        """Create a new user"""
+        pass
+
+    @abstractmethod
+    async def list_users(self) -> List[UserType]:
+        """List all users"""
+        pass
+
+    @abstractmethod
+    async def update_user(self, user_id: int, user_data: UserUpdateType) -> UserType:
+        """Update an existing user"""
+        pass
+
+    @abstractmethod
+    async def update_user_password(
+        self, user_id: int, hashed_password: str
+    ) -> UserType:
+        """Update the password of an existing user"""
+        pass
+
+    @abstractmethod
+    async def delete_user(self, user_id: int) -> None:
+        """Soft delete a user by ID"""
         pass

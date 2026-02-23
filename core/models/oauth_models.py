@@ -30,8 +30,8 @@ class TokenModel(BaseModel):
     type: TokenType = Field(
         default=..., description="The type of the token, either 'access' or 'refresh'"
     )
-    parent_token: Optional[str] = Field(
-        default=None,
+    parent_token: str = Field(
+        default=...,
         description="The parent token string, if this token is an access token",
     )
     revoked: bool = Field(
@@ -53,15 +53,11 @@ class TokenModel(BaseModel):
 
 
 class TokenCreateModel(BaseModel):
-    user_id: int = Field(
-        default=..., description="The ID of the user associated with the token"
-    )
-    token: str = Field(default=..., description="The token string, typically a JWT")
     type: TokenType = Field(
         default=..., description="The type of the token, either 'access' or 'refresh'"
     )
-    parent_token: Optional[str] = Field(
-        default=None,
+    parent_token: str = Field(
+        default=...,
         description="The parent token string, if this token is an access token",
     )
     expires_at: datetime = Field(
@@ -94,6 +90,15 @@ class TokenResponseModel(BaseModel):
     )
     expires_in: datetime = Field(
         default=..., description="The timestamp when the token expires"
+    )
+
+
+class TokenRequestModel(BaseModel):
+    access_token: str = Field(
+        default=..., description="The access token string, typically a JWT"
+    )
+    refresh_token: str = Field(
+        default=..., description="The refresh token string, typically a JWT"
     )
 
 

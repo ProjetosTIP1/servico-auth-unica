@@ -7,6 +7,8 @@ Everything above (route handlers, use-case services) stays decoupled from
 implementation details because dependencies are injected here.
 """
 
+from core.helpers.authentication_helper import validate_token
+from typing import Annotated
 from functools import lru_cache
 
 from fastapi import Depends, HTTPException, status
@@ -16,10 +18,13 @@ from core.infrastructure.microsoft_auth_adapter import (
     MicrosoftAuthAdapter,
     MicrosoftAuthError,
 )
+from core.helpers.authentication_helper import oauth2_scheme
 from core.repositories.token_repository import ITokenRepository
-from core.models.user_models import MicrosoftUserIdentity
+from core.models.user_models import MicrosoftUserIdentity, UserType
 from core.ports.service import IMicrosoftAuthService
+
 from core.services.microsoft_login_service import MicrosoftLoginService
+from core.services.token_service import TokenService
 
 # ── Bearer token extractor ─────────────────────────────────────────────────────
 # auto_error=False lets us return a custom 401 instead of FastAPI's default.
@@ -54,6 +59,47 @@ def get_microsoft_login_service(
 def get_token_repository() -> ITokenRepository:
     """Provide a new instance of the TokenRepository."""
     return ITokenRepository()
+
+
+def get_token_service(
+    token_repository: ITokenRepository = Depends(get_token_repository),
+) -> TokenService:
+    """Provide a fully wired `TokenService` to the route handler."""
+    return TokenService(token_repository=token_repository)
+
+
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    user_repo: Annotated[IUserRepository, Depends(get_user_repository)],
+) -> UserType:
+    """
+    Extract and validate user from JWT token.
+    Returns a User object if authentication is successful.
+    Raises HTTPException if authentication fails.
+    """
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    payload = validate_token(token)
+    if payload is None:
+        raise credentials_exception
+
+    username = payload.get("sub")
+    if username is None:
+        raise credentials_exception
+
+    # Fetch user from database using the username from the token
+    try:
+        user: UserType = await user_repo.get_user_by_username(username)
+        if user is None:
+            raise credentials_exception
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+    return user
 
 
 # ── Reusable "protected route" dependency ─────────────────────────────────────

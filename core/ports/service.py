@@ -1,32 +1,34 @@
+from core.models.user_models import UserType
+from typing import List
+from typing import Any
 from abc import ABC, abstractmethod
 
 from core.models.oauth_models import (
     TokenResponseModel,
-    TokenCreateModel,
+    TokenRequestModel,
     TokenUpdateModel,
 )
 from core.models.user_models import MicrosoftUserIdentity
 
 
 class ITokenService(ABC):
+    """Abstract interface for token service operations"""
+
     @abstractmethod
-    async def create_access_token(self, token: TokenCreateModel) -> TokenResponseModel:
-        """Create a new access token for the given user information."""
+    async def create_access_token(self, user: UserType, parent_token: str) -> str:
+        """Create a new access token for the given user and parent token."""
         pass
 
     @abstractmethod
-    async def create_refresh_token(self, token: TokenCreateModel) -> TokenResponseModel:
-        """Create a new refresh token for the given user information."""
+    async def create_refresh_token(self, user: UserType, parent_token: str) -> str:
+        """Create a new refresh token for the given user and parent token."""
         pass
 
     @abstractmethod
-    async def exchange_access_token(self, access_token: str) -> TokenResponseModel:
-        """Exchanges an existing access token for a new set of access and refresh tokens."""
-        pass
-
-    @abstractmethod
-    async def exchange_refresh_token(self, refresh_token: str) -> TokenResponseModel:
-        """Exchanges an existing refresh token for a new set of access and refresh tokens."""
+    async def create_token_pair(
+        self, user: UserType, token: TokenRequestModel
+    ) -> TokenResponseModel:
+        """Create a new pair of access and refresh tokens for the given user."""
         pass
 
     @abstractmethod
@@ -40,8 +42,72 @@ class ITokenService(ABC):
         pass
 
     @abstractmethod
-    async def revoke_token(self, token: TokenResponseModel) -> None:
+    async def revoke_token(self, token_response: TokenResponseModel) -> None:
         """Revoke the given token."""
+        pass
+
+    @abstractmethod
+    async def logout(self, auth_user_id: int, token: TokenRequestModel) -> None:
+        """Log out the current user by invalidating their authentication tokens."""
+        pass
+
+    @abstractmethod
+    async def login(self, username: str, password: str) -> TokenResponseModel:
+        """Authenticate a user and return an authentication token pair."""
+        pass
+
+    @abstractmethod
+    async def validate_access_token(self, token: str) -> bool:
+        """Validate an access token."""
+        pass
+
+
+class IUserService(ABC):
+    """Abstract interface for user service operations"""
+
+    @abstractmethod
+    async def get_user_by_username(self, auth_user_id: int, username: str) -> Any:
+        """Get user by username"""
+        pass
+
+    @abstractmethod
+    async def get_user_by_email(self, email: str) -> UserType:
+        """Get user by email"""
+        pass
+
+    @abstractmethod
+    async def get_user_by_id(self, auth_user_id: int, user_id: int) -> Any:
+        """Get user by ID"""
+        pass
+
+    @abstractmethod
+    async def create_user(self, auth_user_id: int, user_data: Any) -> Any:
+        """Create a new user"""
+        pass
+
+    @abstractmethod
+    async def list_users(
+        self,
+        auth_user_id: int,
+    ) -> List[Any]:
+        """List all users"""
+        pass
+
+    @abstractmethod
+    async def update_user(self, auth_user_id: int, user_id: int, user_data: Any) -> Any:
+        """Update an existing user"""
+        pass
+
+    @abstractmethod
+    async def update_user_password(
+        self, auth_user_id: int, user_id: int, data: Any
+    ) -> Any:
+        """Update the password of an existing user"""
+        pass
+
+    @abstractmethod
+    async def delete_user(self, auth_user_id: int, user_id: int) -> None:
+        """Soft delete a user by ID"""
         pass
 
 
