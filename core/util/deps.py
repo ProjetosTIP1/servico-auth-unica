@@ -7,6 +7,8 @@ Everything above (route handlers, use-case services) stays decoupled from
 implementation details because dependencies are injected here.
 """
 
+from core.ports.service import ITokenService
+from core.ports.repository import IUserRepository
 from core.helpers.authentication_helper import validate_token
 from typing import Annotated
 from functools import lru_cache
@@ -59,6 +61,11 @@ def get_microsoft_login_service(
 def get_token_repository() -> ITokenRepository:
     """Provide a new instance of the TokenRepository."""
     return ITokenRepository()
+
+
+def get_user_repository() -> IUserRepository:
+    """Provide a new instance of the UserRepository."""
+    return IUserRepository()
 
 
 def get_token_service(
@@ -139,3 +146,7 @@ async def require_microsoft_user(
             detail=str(exc),
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
+
+AuthenticatedUser = Annotated[UserType, Depends(get_current_user)]
+TokenService = Annotated[ITokenService, Depends(get_token_service)]
