@@ -13,5 +13,5 @@ app.middleware(middleware_type="http")(correlation_id_middleware)
 app.middleware(middleware_type="http")(auth_middleware)
 
 # Register routers
-app.include_router(router=ms_router, prefix="/ms", tags=["Microsoft"])
+# app.include_router(router=ms_router, prefix="/ms", tags=["Microsoft"])
 app.include_router(router=oauth_router, prefix="/oauth", tags=["OAuth"])

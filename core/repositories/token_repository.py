@@ -8,7 +8,7 @@ from core.models.oauth_models import TokenModel, TokenCreateModel, TokenUpdateMo
 from core.helpers.logger_helper import logger
 
 
-class InMemoryTokenRepository(ITokenRepository):
+class TokenRepository(ITokenRepository):
     def __init__(self, db: IDatabase):
         self.db: IDatabase = db
 

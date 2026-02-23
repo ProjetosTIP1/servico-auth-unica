@@ -21,7 +21,7 @@ from core.infrastructure.microsoft_auth_adapter import (
     MicrosoftAuthError,
 )
 from core.helpers.authentication_helper import oauth2_scheme
-from core.repositories.token_repository import ITokenRepository
+from core.repositories.token_repository import TokenRepository
 from core.models.user_models import MicrosoftUserIdentity, UserType
 from core.ports.service import IMicrosoftAuthService
 
@@ -58,9 +58,9 @@ def get_microsoft_login_service(
     return MicrosoftLoginService(ms_auth=ms_auth)
 
 
-def get_token_repository() -> ITokenRepository:
+def get_token_repository() -> TokenRepository:
     """Provide a new instance of the TokenRepository."""
-    return ITokenRepository()
+    return TokenRepository()
 
 
 def get_user_repository() -> IUserRepository:
@@ -69,7 +69,7 @@ def get_user_repository() -> IUserRepository:
 
 
 def get_token_service(
-    token_repository: ITokenRepository = Depends(get_token_repository),
+    token_repository: TokenRepository = Depends(get_token_repository),
 ) -> TokenService:
     """Provide a fully wired `TokenService` to the route handler."""
     return TokenService(token_repository=token_repository)
