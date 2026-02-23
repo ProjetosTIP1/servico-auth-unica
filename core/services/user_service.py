@@ -1,35 +1,98 @@
 from typing import List
+
+from core.models.user_models import UserUpdatePasswordType
+from core.models.user_models import UserCreateType, UserUpdateType, UserType
+
 from core.repositories.user_repository import IUserRepository
 from core.ports.service import IUserService
-from core.models.user_models import UserCreateType, UserUpdateType, UserType
+from core.helpers.authentication_helper import verify_password, get_password_hash
 
 
 class UserService(IUserService):
     def __init__(self, user_repository: IUserRepository):
         self.user_repository = user_repository
 
-    async def get_user_by_username(self, username: str) -> UserType:
-        return await self.user_repository.get_user_by_username(username)
+    async def get_user_by_username(self, auth_user_id: int, username: str) -> UserType:
+        try:
+            user: UserType = await self.user_repository.get_user_by_username(username)
+            return user
+        except Exception as e:
+            raise Exception(
+                f"Error in service layer while fetching user by username: {e}"
+            )
 
-    async def get_user_by_id(self, user_id: int) -> UserType:
-        return await self.user_repository.get_user_by_id(user_id)
+    async def get_user_by_email(self, auth_user_id: int, email: str) -> UserType:
+        try:
+            user: UserType = await self.user_repository.get_user_by_email(email)
+            return user
+        except Exception as e:
+            raise Exception(f"Error in service layer while fetching user by email: {e}")
 
-    async def get_user_hashed_password(self, username: str) -> str:
-        return await self.user_repository.get_user_hashed_password(username)
+    async def get_user_by_id(self, auth_user_id: int, user_id: int) -> UserType:
+        try:
+            user: UserType = await self.user_repository.get_user_by_id(user_id)
+            return user
+        except Exception as e:
+            raise Exception(f"Error in service layer while fetching user by id: {e}")
+
+    async def get_user_hashed_password(self, auth_user_id: int, username: str) -> str:
+        try:
+            hashed_password: str = await self.user_repository.get_user_hashed_password(
+                username
+            )
+            return hashed_password
+        except Exception as e:
+            raise Exception(
+                f"Error in service layer while fetching user hashed password: {e}"
+            )
 
     async def create_user(
-        self, user_data: UserCreateType, hashed_password: str
+        self, auth_user_id: int, user_data: UserCreateType
     ) -> UserType:
-        return await self.user_repository.create_user(user_data, hashed_password)
+        try:
+            hashed_password: str = get_password_hash(user_data.password)
+            user: UserType = await self.user_repository.create_user(
+                user_data, hashed_password
+            )
+            return user
+        except Exception as e:
+            raise Exception(f"Error in service layer while creating user: {e}")
 
-    async def list_users(self) -> List[UserType]:
-        return await self.user_repository.list_users()
+    async def list_users(self, auth_user_id: int) -> List[UserType]:
+        try:
+            users: List[UserType] = await self.user_repository.list_users()
+            return users
+        except Exception as e:
+            raise Exception(f"Error in service layer while listing users: {e}")
 
-    async def update_user(self, user_id: int, user_data: UserUpdateType) -> UserType:
-        return await self.user_repository.update_user(user_id, user_data)
+    async def update_user(
+        self, auth_user_id: int, user_id: int, user_data: UserUpdateType
+    ) -> UserType:
+        try:
+            user: UserType = await self.user_repository.update_user(user_id, user_data)
+            return user
+        except Exception as e:
+            raise Exception(f"Error in service layer while updating user: {e}")
 
-    async def update_user_password(self, user_id: int, hashed_password: str) -> None:
-        return await self.user_repository.update_user_password(user_id, hashed_password)
+    async def update_user_password(
+        self, auth_user_id: int, user_id: int, passwords_data: UserUpdatePasswordType
+    ) -> None:
+        try:
+            if not passwords_data.new_password or not passwords_data.current_password:
+                raise ValueError("New password and current password are required")
+            hashed_password: str = await self.user_repository.get_user_hashed_password(
+                user_id
+            )
+            if not verify_password(passwords_data.current_password, hashed_password):
+                raise ValueError("Current password is incorrect")
+            await self.user_repository.update_user_password(
+                user_id, passwords_data.new_password
+            )
+        except Exception as e:
+            raise Exception(f"Error in service layer while updating user password: {e}")
 
-    async def delete_user(self, user_id: int) -> None:
-        return await self.user_repository.delete_user(user_id)
+    async def delete_user(self, auth_user_id: int, user_id: int) -> None:
+        try:
+            await self.user_repository.delete_user(user_id)
+        except Exception as e:
+            raise Exception(f"Error in service layer while deleting user: {e}")

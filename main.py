@@ -2,11 +2,11 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from api.handlers.oauth_handler import oauth_router
+from api.handlers.user_handler import user_router
 
 from core.infrastructure.database_manager import db_manager
 
 from api.middlewares.correlation_id_mw import correlation_id_middleware
-from api.middlewares.auth_mw import auth_middleware
 
 from core.helpers.logger_helper import logger
 
@@ -34,7 +34,7 @@ app = FastAPI(
 )
 # Register middleware
 app.middleware(middleware_type="http")(correlation_id_middleware)
-app.middleware(middleware_type="http")(auth_middleware)
 
 # Register routers
 app.include_router(router=oauth_router, tags=["OAuth"])
+app.include_router(router=user_router, tags=["Users"])

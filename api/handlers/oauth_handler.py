@@ -1,10 +1,10 @@
-from core.models.oauth_models import TokenRequestModel
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
 from core.util.deps import AuthenticatedUser, TokenServiceDeps
 
+from core.models.oauth_models import TokenRequestModel
 from core.models.user_models import UserType
 from core.models.oauth_models import TokenResponseModel, ResponseModel
 
