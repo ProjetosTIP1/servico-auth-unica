@@ -9,17 +9,21 @@ import uuid
 
 
 async def correlation_id_middleware(request: Request, call_next):
-    correlation_id = request.headers.get("X-Correlation-ID")
-    if not correlation_id:
-        correlation_id = str(uuid.uuid4())
+    try:
+        correlation_id = request.headers.get("X-Correlation-ID")
+        if not correlation_id:
+            correlation_id = str(uuid.uuid4())
 
-    # Add the correlation ID to the request state
-    request.state.correlation_id = correlation_id
+        # Add the correlation ID to the request state
+        request.state.correlation_id = correlation_id
 
-    # Process the request and get the response
-    response = await call_next(request)
+        # Process the request and get the response
+        response = await call_next(request)
 
-    # Add the correlation ID to the response headers
-    response.headers["X-Correlation-ID"] = correlation_id
+        # Add the correlation ID to the response headers
+        response.headers["X-Correlation-ID"] = correlation_id
 
-    return response
+        return response
+    except Exception as e:
+        print(f"Error in correlation ID middleware: {e}")
+        raise e

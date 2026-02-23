@@ -21,9 +21,6 @@ class DatabaseConnections:
 
     sql_server: IDatabase | None = None
     mariadb: IDatabase | None = None
-    mariadb_ramal_table: IDatabase | None = (
-        None  # Assuming same connection can be used for all tables, but can be extended if needed
-    )
 
 
 class DatabaseManager:
@@ -53,13 +50,6 @@ class DatabaseManager:
     def mariadb(self) -> IDatabase | None:
         """Get MariaDB database connection."""
         return self._connections.mariadb
-
-    @property
-    def mariadb_ramal_table(self) -> IDatabase | None:
-        """Get MariaDB connection specifically for the ramal table."""
-        return (
-            self._connections.mariadb_ramal_table
-        )  # Assuming same connection can be used for all tables
 
     @property
     def is_initialized(self) -> bool:
@@ -98,17 +88,6 @@ class DatabaseManager:
             logger.error(error_msg)
             errors.append(error_msg)
 
-        # MariaDB Ramal Table
-        try:
-            mariadb_ramal_table_db = MariaDbAdapter(settings.database_url_ramal)
-            await mariadb_ramal_table_db.execute("SELECT 1")  # Validate connection
-            self._connections.mariadb_ramal_table = mariadb_ramal_table_db
-            logger.info("MariaDB Ramal Table connection initialized successfully.")
-        except Exception as e:
-            error_msg = f"MariaDB Ramal Table initialization failed: {e}"
-            logger.error(error_msg)
-            errors.append(error_msg)
-
         if errors:
             logger.warning(f"Some database connections failed: {errors}")
 
@@ -137,13 +116,6 @@ class DatabaseManager:
             except Exception as e:
                 logger.error(f"Error closing MariaDB connection: {e}")
 
-        if self._connections.mariadb_ramal_table:
-            try:
-                await self._connections.mariadb_ramal_table.disconnect()
-                logger.info("MariaDB Ramal Table connection closed.")
-            except Exception as e:
-                logger.error(f"Error closing MariaDB Ramal Table connection: {e}")
-
         self._connections = DatabaseConnections()
         self._initialized = False
         logger.info("All database connections closed.")
@@ -157,7 +129,6 @@ class DatabaseManager:
             {
                 "sql_server": {"status": "healthy|unhealthy|not_configured", ...},
                 "mariadb": {"status": "healthy|unhealthy|not_configured", ...},
-                "mariadb_ramal_table": {"status": "healthy|unhealthy|not_configured", ...}
             }
         """
         results: dict[str, any] = {}
@@ -181,25 +152,6 @@ class DatabaseManager:
                 results["mariadb"] = {"status": "unhealthy", "error": str(e)}
         else:
             results["mariadb"] = {"status": "not_configured", "connected": False}
-
-        # MariaDB Ramal Table health check
-        if self._connections.mariadb_ramal_table:
-            try:
-                await self._connections.mariadb_ramal_table.execute("SELECT 1")
-                results["mariadb_ramal_table"] = {
-                    "status": "healthy",
-                    "connected": True,
-                }
-            except Exception as e:
-                results["mariadb_ramal_table"] = {
-                    "status": "unhealthy",
-                    "error": str(e),
-                }
-        else:
-            results["mariadb_ramal_table"] = {
-                "status": "not_configured",
-                "connected": False,
-            }
 
         return results
 

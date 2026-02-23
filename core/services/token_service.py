@@ -77,6 +77,7 @@ class TokenService(ITokenService):
             access_token: str = create_jwt_token(
                 data={"sub": user.username},
                 expires_delta=self._get_time_to_expire(TokenType.ACCESS),
+                token_type="access",
             )
 
             # Save the token in the repository (e.g., database)
@@ -104,6 +105,7 @@ class TokenService(ITokenService):
             refresh_token_str = create_jwt_token(
                 data={"sub": str(user.username)},
                 expires_delta=self._get_time_to_expire(TokenType.REFRESH),
+                token_type="refresh",
             )
 
             await self.token_repository.create_refresh_token(

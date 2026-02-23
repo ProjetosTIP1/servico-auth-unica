@@ -9,16 +9,20 @@ from fastapi import Request
 
 
 async def auth_middleware(request: Request, call_next):
-    token = request.headers.get("Authorization")
-    if token:
-        token = token.replace("Bearer ", "")
-        payload = validate_token(token)
-        if payload:
-            request.state.user = payload.get("sub")
+    try:
+        token = request.headers.get("Authorization")
+        if token:
+            token = token.replace("Bearer ", "")
+            payload = validate_token(token)
+            if payload:
+                request.state.user = payload.get("sub")
+            else:
+                request.state.user = None
         else:
             request.state.user = None
-    else:
-        request.state.user = None
 
-    response = await call_next(request)
-    return response
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        print(f"Error in authentication middleware: {e}")
+        raise e

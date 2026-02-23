@@ -13,14 +13,17 @@ from core.helpers.authentication_helper import validate_token
 from typing import Annotated
 from functools import lru_cache
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from core.infrastructure.database_manager import DatabaseManager
 from core.infrastructure.microsoft_auth_adapter import (
     MicrosoftAuthAdapter,
     MicrosoftAuthError,
 )
 from core.helpers.authentication_helper import oauth2_scheme
+
+from core.repositories.user_repository import UserRepository
 from core.repositories.token_repository import TokenRepository
 from core.models.user_models import MicrosoftUserIdentity, UserType
 from core.ports.service import IMicrosoftAuthService
@@ -51,6 +54,17 @@ def _get_ms_auth_adapter() -> IMicrosoftAuthService:
 # ── Use-case factory ──────────────────────────────────────────────────────────
 
 
+async def get_database_manager(request: Request) -> DatabaseManager:
+    """
+    Dependency to get the database manager from the request state.
+    This allows us to access the database connections initialized at startup.
+    """
+    db_manager = request.app.state.db_manager
+    if db_manager is None or not db_manager.is_initialized:
+        raise HTTPException(status_code=500, detail="Database manager not initialized")
+    return db_manager
+
+
 def get_microsoft_login_service(
     ms_auth: IMicrosoftAuthService = Depends(_get_ms_auth_adapter),
 ) -> MicrosoftLoginService:
@@ -60,12 +74,12 @@ def get_microsoft_login_service(
 
 def get_token_repository() -> TokenRepository:
     """Provide a new instance of the TokenRepository."""
-    return TokenRepository()
+    return TokenRepository(db=Depends(get_database_manager))
 
 
 def get_user_repository() -> IUserRepository:
     """Provide a new instance of the UserRepository."""
-    return IUserRepository()
+    return UserRepository(db=Depends(get_database_manager))
 
 
 def get_token_service(
@@ -94,6 +108,14 @@ async def get_current_user(
     if payload is None:
         raise credentials_exception
 
+    # Modern validation: Check token type to prevent token substitution attacks
+    if payload.get("type") != "access":
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token type. Access token required.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     username = payload.get("sub")
     if username is None:
         raise credentials_exception
@@ -103,6 +125,16 @@ async def get_current_user(
         user: UserType = await user_repo.get_user_by_username(username)
         if user is None:
             raise credentials_exception
+
+        # Modern validation: Check if user is active
+        if not user.is_active:
+            raise HTTPException(
+                status_code=403,
+                detail="User is inactive",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 

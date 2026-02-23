@@ -42,7 +42,9 @@ def validate_token(token: str) -> Optional[dict]:
         return None
 
 
-def create_jwt_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_jwt_token(
+    data: dict, expires_delta: timedelta | None = None, token_type: str = "access"
+) -> str:
     """Create a JWT access or refresh token"""
     try:
         to_encode = data.copy()
@@ -52,7 +54,7 @@ def create_jwt_token(data: dict, expires_delta: timedelta | None = None) -> str:
             expire = datetime.now(timezone.utc) + timedelta(
                 minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
             )
-        to_encode.update({"exp": expire})
+        to_encode.update({"exp": expire, "type": token_type})
         encoded_jwt = jwt.encode(
             to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
         )
