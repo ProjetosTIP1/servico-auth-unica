@@ -10,9 +10,6 @@ class CredentialModel(BaseModel):
 
 class AccessTokenType(BaseModel):
     token: str = Field(default=..., description="The access token string")
-    expires_in: int = Field(
-        default=..., description="Time in seconds until the token expires"
-    )
     token_type: str = Field(
         default="Bearer", description="The type of the token, e.g., 'Bearer'"
     )
@@ -26,13 +23,20 @@ class AccessTokenType(BaseModel):
     issued_at: datetime = Field(
         default=..., description="The time when the token was issued"
     )
+    expires_at: datetime = Field(
+        default=..., description="The time when the token expires"
+    )
+    revoked: bool = Field(
+        default=False,
+        description="Indicates whether the refresh token has been revoked",
+    )
+    created_at: datetime = Field(
+        default=..., description="The time when the token was created"
+    )
 
 
 class RefreshTokenType(BaseModel):
     token: str = Field(default=..., description="The refresh token string")
-    expires_in: int = Field(
-        default=..., description="Time in seconds until the refresh token expires"
-    )
     token_type: str = Field(
         default="Refresh", description="The type of the token, e.g., 'Refresh'"
     )
@@ -49,6 +53,12 @@ class RefreshTokenType(BaseModel):
     revoked: bool = Field(
         default=False,
         description="Indicates whether the refresh token has been revoked",
+    )
+    expires_at: datetime = Field(
+        default=..., description="The time when the token expires"
+    )
+    created_at: datetime = Field(
+        default=..., description="The time when the token was created"
     )
     consumed_at: Optional[datetime] = Field(
         default=None,

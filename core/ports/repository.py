@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from core.models.oauth_models import TokenModel, TokenCreateModel, TokenUpdateModel
+from core.models.token_models import TokenModel, TokenCreateModel, TokenUpdateModel
 
 
 class ITokenRepository(ABC):
