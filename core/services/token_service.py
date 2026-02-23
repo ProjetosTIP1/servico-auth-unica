@@ -33,13 +33,13 @@ class TokenService(ITokenService):
         self.token_repository: ITokenRepository = token_repository
         self.user_repository: IUserRepository = user_repository
 
-    def _get_time_to_expire(self, type: TokenType) -> datetime:
+    def _get_time_to_expire(self, type: TokenType) -> timedelta:
+        """Return the TTL duration for the given token type."""
         if type == TokenType.ACCESS:
-            return datetime.now(timezone.utc) + timedelta(
-                minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-            )
+            return timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         elif type == TokenType.REFRESH:
-            return datetime.now(timezone.utc) + timedelta(days=7)
+            return timedelta(days=7)
+        return timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     async def _validate_refresh_token(self, refresh_token_str: str) -> bool:
         try:
@@ -86,7 +86,8 @@ class TokenService(ITokenService):
                     user_id=user.id,
                     token=access_token,
                     parent_token=parent_token,
-                    expires_at=self._get_time_to_expire(TokenType.ACCESS),
+                    expires_at=datetime.now(timezone.utc)
+                    + self._get_time_to_expire(TokenType.ACCESS),
                     type=TokenType.ACCESS,
                 )
             )
@@ -113,7 +114,8 @@ class TokenService(ITokenService):
                     user_id=user.id,
                     token=refresh_token_str,
                     parent_token=parent_token,
-                    expires_at=self._get_time_to_expire(TokenType.REFRESH),
+                    expires_at=datetime.now(timezone.utc)
+                    + self._get_time_to_expire(TokenType.REFRESH),
                     type=TokenType.REFRESH,
                 )
             )
@@ -144,7 +146,8 @@ class TokenService(ITokenService):
             return TokenResponseModel(
                 access_token=access_token,
                 refresh_token=refresh_token,
-                expires_in=self._get_time_to_expire(TokenType.ACCESS),
+                expires_in=datetime.now(timezone.utc)
+                + self._get_time_to_expire(TokenType.ACCESS),
             )
         except Exception as e:
             logger.error(
@@ -264,12 +267,13 @@ class TokenService(ITokenService):
             return TokenResponseModel(
                 access_token=access_token,
                 refresh_token=refresh_token,
-                expires_in=self._get_time_to_expire(TokenType.ACCESS),
+                expires_in=datetime.now(timezone.utc)
+                + self._get_time_to_expire(TokenType.ACCESS),
             )
         except Exception as e:
             logger.error(
                 message=f"Error creating token: {e}",
-                error_path="TokenService.create_token",
+                error_path="TokenService.login",
             )
             raise e
 

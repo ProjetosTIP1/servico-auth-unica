@@ -53,6 +53,10 @@ class TokenModel(BaseModel):
 
 
 class TokenCreateModel(BaseModel):
+    user_id: int = Field(
+        default=..., description="The ID of the user associated with the token"
+    )
+    token: str = Field(default=..., description="The token string, typically a JWT")
     type: TokenType = Field(
         default=..., description="The type of the token, either 'access' or 'refresh'"
     )
