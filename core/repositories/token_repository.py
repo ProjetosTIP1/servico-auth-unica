@@ -163,7 +163,7 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error updating token: {str(e)}")
 
-    async def revoke_token(self, token: TokenModel) -> None:
+    async def revoke_token(self, token: str) -> None:
         """Mark a token as revoked, with a 30-second grace period."""
         try:
             query = """
@@ -173,10 +173,8 @@ class TokenRepository(ITokenRepository):
                     updated_at = NOW()
                 WHERE token = :token
             """
-            await self.db.execute_with_params(query, {"token": token.token})
-            logger.debug(
-                message=f"Token revoked with ID: {token.id} for user ID: {token.user_id}"
-            )
+            await self.db.execute_with_params(query, {"token": token})
+            logger.debug(message=f"Token revoked with ID: {token}")
         except Exception as e:
             logger.error(
                 message=f"Error revoking token: {str(e)}",

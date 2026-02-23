@@ -8,7 +8,7 @@ implementation details because dependencies are injected here.
 """
 
 from core.ports.service import ITokenService
-from core.ports.repository import IUserRepository
+from core.ports.repository import IUserRepository, ITokenRepository
 from core.helpers.authentication_helper import validate_token
 from typing import Annotated
 from functools import lru_cache
@@ -107,11 +107,18 @@ def get_user_service(
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     user_repo: Annotated[IUserRepository, Depends(get_user_repository)],
+    token_repo: Annotated[ITokenRepository, Depends(get_token_repository)],
 ) -> UserType:
     """
-    Extract and validate user from JWT token.
-    Returns a User object if authentication is successful.
-    Raises HTTPException if authentication fails.
+    Extract and validate the current user from the Bearer access token.
+
+    Validation is performed in three layers:
+      1. Cryptographic — signature + expiry (fast, no DB hit).
+      2. Revocation    — checks the token has not been revoked/consumed in the
+                         DB (covers logout, token rotation and security breaches).
+      3. Identity      — confirms the user still exists and is active.
+
+    Raises HTTPException (401/403) on any failure.
     """
     credentials_exception = HTTPException(
         status_code=401,
@@ -119,11 +126,12 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    # ── 1. Cryptographic validation ───────────────────────────────────────────
     payload = validate_token(token)
     if payload is None:
         raise credentials_exception
 
-    # Modern validation: Check token type to prevent token substitution attacks
+    # Prevent refresh tokens from being used on protected resource endpoints.
     if payload.get("type") != "access":
         raise HTTPException(
             status_code=401,
@@ -135,13 +143,28 @@ async def get_current_user(
     if username is None:
         raise credentials_exception
 
-    # Fetch user from database using the username from the token
+    # ── 2. DB-level revocation check ──────────────────────────────────────────
+    # A token can be cryptographically valid but already revoked (e.g. after
+    # logout, token rotation, or a security breach). We must reject it.
+    try:
+        token_model = await token_repo.get_token_by_string(token)
+        if token_model is None or token_model.revoked:
+            raise HTTPException(
+                status_code=401,
+                detail="Token has been revoked.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Token lookup error: {e}")
+
+    # ── 3. Identity & active-status check ────────────────────────────────────
     try:
         user: UserType = await user_repo.get_user_by_username(username)
         if user is None:
             raise credentials_exception
 
-        # Modern validation: Check if user is active
         if not user.is_active:
             raise HTTPException(
                 status_code=403,
@@ -154,6 +177,18 @@ async def get_current_user(
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     return user
+
+
+def get_current_token(request: Request) -> str | None:
+    """
+    Extract and validate user from JWT token.
+    Returns a User object if authentication is successful.
+    Raises HTTPException if authentication fails.
+    """
+    token: str | None = request.headers.get("Authorization")
+    if token is None:
+        raise HTTPException(status_code=401, detail="Missing Authorization header.")
+    return token
 
 
 # ── Reusable "protected route" dependency ─────────────────────────────────────
@@ -198,3 +233,4 @@ async def require_microsoft_user(
 AuthenticatedUser = Annotated[UserType, Depends(get_current_user)]
 TokenServiceDeps = Annotated[ITokenService, Depends(get_token_service)]
 UserServiceDeps = Annotated[UserServiceImpl, Depends(get_user_service)]
+TokenDeps = Annotated[str | None, Depends(get_current_token)]

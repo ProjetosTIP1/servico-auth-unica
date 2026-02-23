@@ -1,3 +1,4 @@
+from core.models.oauth_models import TokenRequestModel
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
@@ -42,10 +43,11 @@ async def refresh_token(
 async def logout(
     authenticated_user: AuthenticatedUser,
     service: TokenServiceDeps,
+    token: TokenRequestModel,
 ) -> ResponseModel:
     """Log out the current user by invalidating their authentication token."""
     try:
-        await service.logout(authenticated_user)
+        await service.logout(authenticated_user.id, token)
         return ResponseModel(
             code=200, status="success", message="Logged out successfully"
         )
