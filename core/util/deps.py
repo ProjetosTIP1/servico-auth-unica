@@ -29,7 +29,8 @@ from core.models.user_models import MicrosoftUserIdentity, UserType
 from core.ports.service import IMicrosoftAuthService
 
 from core.services.microsoft_login_service import MicrosoftLoginService
-from core.services.token_service import TokenService
+from core.services.token_service import TokenService as TokenServiceImpl
+from core.services.user_service import UserService as UserServiceImpl
 
 # ── Bearer token extractor ─────────────────────────────────────────────────────
 # auto_error=False lets us return a custom 401 instead of FastAPI's default.
@@ -54,7 +55,7 @@ def _get_ms_auth_adapter() -> IMicrosoftAuthService:
 # ── Use-case factory ──────────────────────────────────────────────────────────
 
 
-async def get_database_manager(request: Request) -> DatabaseManager:
+def get_database_manager(request: Request) -> DatabaseManager:
     """
     Dependency to get the database manager from the request state.
     This allows us to access the database connections initialized at startup.
@@ -72,21 +73,35 @@ def get_microsoft_login_service(
     return MicrosoftLoginService(ms_auth=ms_auth)
 
 
-def get_token_repository() -> TokenRepository:
+def get_token_repository(
+    db_manager: DatabaseManager = Depends(get_database_manager),
+) -> TokenRepository:
     """Provide a new instance of the TokenRepository."""
-    return TokenRepository(db=Depends(get_database_manager))
+    return TokenRepository(db=db_manager.mariadb)
 
 
-def get_user_repository() -> IUserRepository:
+def get_user_repository(
+    db_manager: DatabaseManager = Depends(get_database_manager),
+) -> IUserRepository:
     """Provide a new instance of the UserRepository."""
-    return UserRepository(db=Depends(get_database_manager))
+    return UserRepository(db=db_manager.mariadb)
 
 
 def get_token_service(
     token_repository: TokenRepository = Depends(get_token_repository),
-) -> TokenService:
+    user_repository: IUserRepository = Depends(get_user_repository),
+) -> TokenServiceImpl:
     """Provide a fully wired `TokenService` to the route handler."""
-    return TokenService(token_repository=token_repository)
+    return TokenServiceImpl(
+        token_repository=token_repository, user_repository=user_repository
+    )
+
+
+def get_user_service(
+    user_repository: IUserRepository = Depends(get_user_repository),
+) -> UserServiceImpl:
+    """Provide a fully wired `UserService` to the route handler."""
+    return UserServiceImpl(user_repository=user_repository)
 
 
 async def get_current_user(
@@ -181,4 +196,5 @@ async def require_microsoft_user(
 
 
 AuthenticatedUser = Annotated[UserType, Depends(get_current_user)]
-TokenService = Annotated[ITokenService, Depends(get_token_service)]
+TokenServiceDeps = Annotated[ITokenService, Depends(get_token_service)]
+UserServiceDeps = Annotated[UserServiceImpl, Depends(get_user_service)]

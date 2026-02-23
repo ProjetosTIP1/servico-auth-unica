@@ -1,28 +1,32 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 
 from core.config.settings import settings
 from core.helpers.logger_helper import logger
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/o/token")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a plain password against a hashed password.
+    Passwords are encoded to UTF-8 before verification (required by bcrypt).
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
 
 
 def get_password_hash(password: str) -> str:
     """
-    Hash a plain password using the configured hashing algorithm.
+    Hash a plain password using bcrypt.
+    Returns a string (bcrypt returns bytes, decoded to str for storage).
     """
-    return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 
 def validate_token(token: str) -> Optional[dict]:

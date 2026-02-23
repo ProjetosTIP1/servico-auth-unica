@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
-from core.util.deps import AuthenticatedUser, TokenService
+from core.util.deps import AuthenticatedUser, TokenServiceDeps
 
 from core.models.user_models import UserType
 from core.models.oauth_models import TokenResponseModel, ResponseModel
@@ -29,7 +29,7 @@ async def get_current_user(
 @oauth_router.post("/refresh", response_model=TokenResponseModel)
 async def refresh_token(
     authenticated_user: AuthenticatedUser,
-    service: TokenService,
+    service: TokenServiceDeps,
 ) -> TokenResponseModel:
     """Refresh the authentication token for the current user."""
     try:
@@ -41,7 +41,7 @@ async def refresh_token(
 @oauth_router.post("/logout", response_model=ResponseModel)
 async def logout(
     authenticated_user: AuthenticatedUser,
-    service: TokenService,
+    service: TokenServiceDeps,
 ) -> ResponseModel:
     """Log out the current user by invalidating their authentication token."""
     try:
@@ -56,7 +56,7 @@ async def logout(
 @oauth_router.post("/token", response_model=TokenResponseModel)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    service: TokenService,
+    service: TokenServiceDeps,
 ) -> TokenResponseModel:
     """
     Authenticate a user and return an authentication token.

@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     # Startup
     try:
         await db_manager.initialize()
-        app.state.db = db_manager
+        app.state.db_manager = db_manager
         logger.info("Database connection established.")
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
