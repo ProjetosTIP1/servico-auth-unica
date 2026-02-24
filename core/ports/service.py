@@ -64,7 +64,7 @@ class IUserService(ABC):
     """Abstract interface for user service operations"""
 
     @abstractmethod
-    async def get_user_by_username(self, auth_user_id: int, username: str) -> Any:
+    async def get_user_by_username(self, username: str) -> Any:
         """Get user by username"""
         pass
 
@@ -74,37 +74,37 @@ class IUserService(ABC):
         pass
 
     @abstractmethod
-    async def get_user_by_id(self, auth_user_id: int, user_id: int) -> Any:
+    async def get_user_by_id(self, user_id: int) -> Any:
         """Get user by ID"""
         pass
 
     @abstractmethod
-    async def create_user(self, auth_user_id: int, user_data: Any) -> Any:
+    async def create_user(self, user_data: Any) -> Any:
         """Create a new user"""
         pass
 
     @abstractmethod
-    async def list_users(
-        self,
-        auth_user_id: int,
-    ) -> List[Any]:
+    async def list_users(self) -> List[Any]:
         """List all users"""
         pass
 
     @abstractmethod
-    async def update_user(self, auth_user_id: int, user_id: int, user_data: Any) -> Any:
+    async def update_user(self, user_id: int, user_data: Any) -> Any:
         """Update an existing user"""
         pass
 
     @abstractmethod
-    async def update_user_password(
-        self, auth_user_id: int, user_id: int, data: Any
-    ) -> Any:
+    async def update_user_password(self, user_id: int, data: Any) -> Any:
         """Update the password of an existing user"""
         pass
 
     @abstractmethod
-    async def delete_user(self, auth_user_id: int, user_id: int) -> None:
+    async def reset_user_password(self, user_id: int, new_password: str) -> None:
+        """Reset the password of an existing user"""
+        pass
+
+    @abstractmethod
+    async def delete_user(self, user_id: int) -> None:
         """Soft delete a user by ID"""
         pass
 

@@ -25,4 +25,3 @@ async def auth_middleware(request: Request, call_next):
         return response
     except Exception as e:
         print(f"Error in authentication middleware: {e}")
-        raise e

@@ -18,9 +18,9 @@ async def get_user_by_id(
     authenticated_user: AuthenticatedUser, user_id: int, user_service: UserServiceDeps
 ):
     try:
-        user: UserType = await user_service.get_user_by_id(
-            authenticated_user.id, user_id
-        )
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        user: UserType = await user_service.get_user_by_id(user_id)
         return user
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -33,9 +33,9 @@ async def create_user(
     user_service: UserServiceDeps,
 ):
     try:
-        user: UserType = await user_service.create_user(
-            authenticated_user.id, user_data
-        )
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        user: UserType = await user_service.create_user(user_data)
         return user
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -49,9 +49,9 @@ async def update_user(
     user_service: UserServiceDeps,
 ):
     try:
-        user: UserType = await user_service.update_user(
-            authenticated_user.id, user_id, user_data
-        )
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        user: UserType = await user_service.update_user(user_id, user_data)
         return user
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -65,10 +65,26 @@ async def update_user_password(
     user_service: UserServiceDeps,
 ):
     try:
-        user: UserType = await user_service.update_user_password(
-            authenticated_user.id, user_id, user_data
-        )
+        user: UserType = await user_service.update_user_password(user_id, user_data)
         return user
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@user_router.patch("/{user_email}/reset-password", response_model=ResponseModel)
+async def reset_user_password(
+    user_email: str,
+    new_password: str,
+    user_service: UserServiceDeps,
+):
+    try:
+        await user_service.reset_user_password(user_email, new_password)
+        return ResponseModel(
+            code=200,
+            message="User password reset successfully",
+            status="success",
+            data=None,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -78,7 +94,9 @@ async def delete_user(
     authenticated_user: AuthenticatedUser, user_id: int, user_service: UserServiceDeps
 ):
     try:
-        await user_service.delete_user(authenticated_user.id, user_id)
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        await user_service.delete_user(user_id)
         return ResponseModel(
             code=200, message="User deleted successfully", status="success", data=None
         )

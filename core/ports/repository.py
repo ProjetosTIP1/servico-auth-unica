@@ -56,6 +56,11 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_user_by_email(self, email: str) -> UserType:
+        """Get user by email"""
+        pass
+
+    @abstractmethod
     async def get_user_hashed_password(self, username: str) -> str:
         """Get the hashed password for a user by username"""
         pass

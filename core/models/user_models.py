@@ -11,7 +11,7 @@ class UserType(BaseModel):
         default=True, description="Indicates whether the user account is active"
     )
     manager: Optional[bool] = Field(
-        default=False, description="The name of the user's manager or supervisor"
+        default=False, description="Indicates whether the user is a system manager"
     )
     full_name: Optional[str] = Field(
         default=None, description="The full name of the user"
@@ -82,6 +82,9 @@ class UserCreateType(BaseModel):
 
 
 class UserUpdateType(BaseModel):
+    username: Optional[str] = Field(
+        default=None, description="The username of the user"
+    )
     email: Optional[str] = Field(
         default=None, description="The email address of the user"
     )
@@ -93,6 +96,9 @@ class UserUpdateType(BaseModel):
     )
     last_name: Optional[str] = Field(
         default=None, description="The last name of the user"
+    )
+    manager: Optional[bool] = Field(
+        default=False, description="Indicates whether the user is a system manager"
     )
     unit: Optional[str] = Field(
         default=None, description="The unit or department the user belongs to"

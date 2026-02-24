@@ -26,4 +26,3 @@ async def correlation_id_middleware(request: Request, call_next):
         return response
     except Exception as e:
         print(f"Error in correlation ID middleware: {e}")
-        raise e

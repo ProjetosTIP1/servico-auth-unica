@@ -12,7 +12,7 @@ class UserService(IUserService):
     def __init__(self, user_repository: IUserRepository):
         self.user_repository = user_repository
 
-    async def get_user_by_username(self, auth_user_id: int, username: str) -> UserType:
+    async def get_user_by_username(self, username: str) -> UserType:
         try:
             user: UserType = await self.user_repository.get_user_by_username(username)
             if not user:
@@ -23,7 +23,7 @@ class UserService(IUserService):
                 f"Error in service layer while fetching user by username: {e}"
             )
 
-    async def get_user_by_email(self, auth_user_id: int, email: str) -> UserType:
+    async def get_user_by_email(self, email: str) -> UserType:
         try:
             user: UserType = await self.user_repository.get_user_by_email(email)
             if not user:
@@ -32,7 +32,7 @@ class UserService(IUserService):
         except Exception as e:
             raise Exception(f"Error in service layer while fetching user by email: {e}")
 
-    async def get_user_by_id(self, auth_user_id: int, user_id: int) -> UserType:
+    async def get_user_by_id(self, user_id: int) -> UserType:
         try:
             user: UserType = await self.user_repository.get_user_by_id(user_id)
             if not user:
@@ -41,7 +41,7 @@ class UserService(IUserService):
         except Exception as e:
             raise Exception(f"Error in service layer while fetching user by id: {e}")
 
-    async def get_user_hashed_password(self, auth_user_id: int, username: str) -> str:
+    async def get_user_hashed_password(self, username: str) -> str:
         try:
             hashed_password: str = await self.user_repository.get_user_hashed_password(
                 username
@@ -52,14 +52,17 @@ class UserService(IUserService):
                 f"Error in service layer while fetching user hashed password: {e}"
             )
 
-    async def create_user(
-        self, auth_user_id: int, user_data: UserCreateType
-    ) -> UserType:
+    async def create_user(self, user_data: UserCreateType) -> UserType:
         try:
-            in_user: UserType = await self.user_repository.get_user_by_username(
+            username_user: UserType = await self.user_repository.get_user_by_username(
                 user_data.username
             )
-            if in_user or in_user.email == user_data.email:
+            if username_user:
+                raise ValueError("User already exists")
+            email_user: UserType = await self.user_repository.get_user_by_email(
+                user_data.email
+            )
+            if email_user:
                 raise ValueError("User already exists")
             hashed_password: str = get_password_hash(user_data.password)
             user: UserType = await self.user_repository.create_user(
@@ -69,16 +72,14 @@ class UserService(IUserService):
         except Exception as e:
             raise Exception(f"Error in service layer while creating user: {e}")
 
-    async def list_users(self, auth_user_id: int) -> List[UserType]:
+    async def list_users(self) -> List[UserType]:
         try:
             users: List[UserType] = await self.user_repository.list_users()
             return users
         except Exception as e:
             raise Exception(f"Error in service layer while listing users: {e}")
 
-    async def update_user(
-        self, auth_user_id: int, user_id: int, user_data: UserUpdateType
-    ) -> UserType:
+    async def update_user(self, user_id: int, user_data: UserUpdateType) -> UserType:
         try:
             user: UserType = await self.user_repository.get_user_by_id(user_id)
             if not user:
@@ -88,20 +89,20 @@ class UserService(IUserService):
                     user_data.username
                 )
                 if user:
-                    raise ValueError("User already exists")
+                    raise ValueError("Username already exists")
             if user_data.email and user_data.email != user.email:
                 user: UserType = await self.user_repository.get_user_by_email(
                     user_data.email
                 )
                 if user:
-                    raise ValueError("User already exists")
+                    raise ValueError("Email already exists")
             user: UserType = await self.user_repository.update_user(user_id, user_data)
             return user
         except Exception as e:
             raise Exception(f"Error in service layer while updating user: {e}")
 
     async def update_user_password(
-        self, auth_user_id: int, user_id: int, passwords_data: UserUpdatePasswordType
+        self, user_id: int, passwords_data: UserUpdatePasswordType
     ) -> None:
         try:
             user: UserType = await self.user_repository.get_user_by_id(user_id)
@@ -114,13 +115,28 @@ class UserService(IUserService):
             )
             if not verify_password(passwords_data.current_password, hashed_password):
                 raise ValueError("Current password is incorrect")
+            hashed_new_password: str = get_password_hash(passwords_data.new_password)
             await self.user_repository.update_user_password(
-                user_id, passwords_data.new_password
+                user.id, hashed_new_password
             )
         except Exception as e:
             raise Exception(f"Error in service layer while updating user password: {e}")
 
-    async def delete_user(self, auth_user_id: int, user_id: int) -> None:
+    async def reset_user_password(self, user_email: str, new_password: str) -> None:
+        try:
+            user: UserType = await self.user_repository.get_user_by_email(user_email)
+            if not user:
+                raise ValueError("User not found")
+            hashed_new_password: str = get_password_hash(new_password)
+            await self.user_repository.update_user_password(
+                user.id, hashed_new_password
+            )
+        except Exception as e:
+            raise Exception(
+                f"Error in service layer while resetting user password: {e}"
+            )
+
+    async def delete_user(self, user_id: int) -> None:
         try:
             user: UserType = await self.user_repository.get_user_by_id(user_id)
             if not user:
