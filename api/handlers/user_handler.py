@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from core.util.deps import AuthenticatedUser, UserServiceDeps
 
+from core.models.oauth_models import ResponseModel
 from core.models.user_models import (
     UserCreateType,
     UserUpdateType,
@@ -72,12 +73,14 @@ async def update_user_password(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@user_router.delete("/{user_id}", response_model=UserType)
+@user_router.delete("/{user_id}", response_model=ResponseModel)
 async def delete_user(
     authenticated_user: AuthenticatedUser, user_id: int, user_service: UserServiceDeps
 ):
     try:
-        user: UserType = await user_service.delete_user(authenticated_user.id, user_id)
-        return user
+        await user_service.delete_user(authenticated_user.id, user_id)
+        return ResponseModel(
+            code=200, message="User deleted successfully", status="success", data=None
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

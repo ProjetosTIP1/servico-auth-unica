@@ -15,6 +15,8 @@ class UserService(IUserService):
     async def get_user_by_username(self, auth_user_id: int, username: str) -> UserType:
         try:
             user: UserType = await self.user_repository.get_user_by_username(username)
+            if not user:
+                raise ValueError("User not found")
             return user
         except Exception as e:
             raise Exception(
@@ -24,6 +26,8 @@ class UserService(IUserService):
     async def get_user_by_email(self, auth_user_id: int, email: str) -> UserType:
         try:
             user: UserType = await self.user_repository.get_user_by_email(email)
+            if not user:
+                raise ValueError("User not found")
             return user
         except Exception as e:
             raise Exception(f"Error in service layer while fetching user by email: {e}")
@@ -31,6 +35,8 @@ class UserService(IUserService):
     async def get_user_by_id(self, auth_user_id: int, user_id: int) -> UserType:
         try:
             user: UserType = await self.user_repository.get_user_by_id(user_id)
+            if not user:
+                raise ValueError("User not found")
             return user
         except Exception as e:
             raise Exception(f"Error in service layer while fetching user by id: {e}")
