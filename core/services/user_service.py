@@ -79,6 +79,21 @@ class UserService(IUserService):
         self, auth_user_id: int, user_id: int, user_data: UserUpdateType
     ) -> UserType:
         try:
+            user: UserType = await self.user_repository.get_user_by_id(user_id)
+            if not user:
+                raise ValueError("User not found")
+            if user_data.username and user_data.username != user.username:
+                user: UserType = await self.user_repository.get_user_by_username(
+                    user_data.username
+                )
+                if user:
+                    raise ValueError("User already exists")
+            if user_data.email and user_data.email != user.email:
+                user: UserType = await self.user_repository.get_user_by_email(
+                    user_data.email
+                )
+                if user:
+                    raise ValueError("User already exists")
             user: UserType = await self.user_repository.update_user(user_id, user_data)
             return user
         except Exception as e:
@@ -88,6 +103,9 @@ class UserService(IUserService):
         self, auth_user_id: int, user_id: int, passwords_data: UserUpdatePasswordType
     ) -> None:
         try:
+            user: UserType = await self.user_repository.get_user_by_id(user_id)
+            if not user:
+                raise ValueError("User not found")
             if not passwords_data.new_password or not passwords_data.current_password:
                 raise ValueError("New password and current password are required")
             hashed_password: str = await self.user_repository.get_user_hashed_password(
@@ -103,6 +121,9 @@ class UserService(IUserService):
 
     async def delete_user(self, auth_user_id: int, user_id: int) -> None:
         try:
+            user: UserType = await self.user_repository.get_user_by_id(user_id)
+            if not user:
+                raise ValueError("User not found")
             await self.user_repository.delete_user(user_id)
         except Exception as e:
             raise Exception(f"Error in service layer while deleting user: {e}")
