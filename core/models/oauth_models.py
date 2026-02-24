@@ -98,6 +98,9 @@ class TokenResponseModel(BaseModel):
 
 
 class TokenRequestModel(BaseModel):
+    user_id: int = Field(
+        default=..., description="The ID of the user associated with the token"
+    )
     access_token: str = Field(
         default=..., description="The access token string, typically a JWT"
     )

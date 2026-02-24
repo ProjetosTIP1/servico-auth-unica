@@ -128,19 +128,25 @@ class TokenService(ITokenService):
             )
             raise e
 
-    async def create_token_pair(
-        self, user: UserType, token: TokenRequestModel
-    ) -> TokenResponseModel:
+    async def create_token_pair(self, token: TokenRequestModel) -> TokenResponseModel:
         try:
             # Validate the token
             if not await self._validate_refresh_token(token.refresh_token):
                 raise TokenRevokedException("Invalid or revoked refresh token")
+
+            user = await self.user_repository.get_user_by_id(token.user_id)
+            if not user:
+                raise UserNotFoundException("User not found")
 
             # Create the token pair
             refresh_token: str = await self.create_refresh_token(
                 user, token.refresh_token
             )
             access_token: str = await self.create_access_token(user, refresh_token)
+
+            # Revoke the old refresh token
+            await self.token_repository.revoke_token(access_token)
+            await self.token_repository.revoke_token(token.refresh_token)
 
             # Return the token pair
             return TokenResponseModel(

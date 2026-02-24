@@ -174,7 +174,7 @@ class TokenRepository(ITokenRepository):
                 WHERE token = :token
             """
             await self.db.execute_with_params(query, {"token": token})
-            logger.debug(message=f"Token revoked with ID: {token}")
+            logger.debug(message=f"Token revoked with ID: {token[:10]}...")
         except Exception as e:
             logger.error(
                 message=f"Error revoking token: {str(e)}",

@@ -4,9 +4,18 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from core.util.deps import AuthenticatedUser, TokenServiceDeps
 
-from core.models.oauth_models import TokenRequestModel
 from core.models.user_models import UserType
-from core.models.oauth_models import TokenResponseModel, ResponseModel
+from core.models.oauth_models import (
+    TokenResponseModel,
+    ResponseModel,
+    TokenRequestModel,
+)
+
+from core.helpers.exceptions_helper import (
+    SecurityBreachException,
+    TokenRevokedException,
+    UserNotFoundException,
+)
 
 oauth_router = APIRouter(
     prefix="/o",
@@ -29,12 +38,18 @@ async def get_current_user(
 
 @oauth_router.post("/refresh", response_model=TokenResponseModel)
 async def refresh_token(
-    authenticated_user: AuthenticatedUser,
+    token_request: TokenRequestModel,
     service: TokenServiceDeps,
 ) -> TokenResponseModel:
     """Refresh the authentication token for the current user."""
     try:
-        return await service.refresh_token(authenticated_user)
+        return await service.create_token_pair(token_request)
+    except SecurityBreachException as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except TokenRevokedException as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except UserNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

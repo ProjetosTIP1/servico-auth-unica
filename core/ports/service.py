@@ -25,9 +25,7 @@ class ITokenService(ABC):
         pass
 
     @abstractmethod
-    async def create_token_pair(
-        self, user: UserType, token: TokenRequestModel
-    ) -> TokenResponseModel:
+    async def create_token_pair(self, token: TokenRequestModel) -> TokenResponseModel:
         """Create a new pair of access and refresh tokens for the given user."""
         pass
 
