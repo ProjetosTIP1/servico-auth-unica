@@ -50,6 +50,16 @@ class UserService(IUserService):
         self, auth_user_id: int, user_data: UserCreateType
     ) -> UserType:
         try:
+            user: UserType = await self.user_repository.get_user_by_username(
+                user_data.username
+            )
+            if user:
+                raise ValueError("User already exists")
+            user: UserType = await self.user_repository.get_user_by_email(
+                user_data.email
+            )
+            if user:
+                raise ValueError("User already exists")
             hashed_password: str = get_password_hash(user_data.password)
             user: UserType = await self.user_repository.create_user(
                 user_data, hashed_password

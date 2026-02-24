@@ -4,6 +4,8 @@ from core.ports.infrastructure import IDatabase
 
 from core.models.user_models import UserType, UserUpdateType, UserCreateType
 
+from core.helpers.sql_helper import filter_valid_update_clauses
+
 
 class UserRepository(IUserRepository):
     def __init__(self, db: IDatabase):
@@ -96,8 +98,7 @@ class UserRepository(IUserRepository):
                 # Nothing to update — return the current state.
                 return await self.get_user_by_id(user_id)
 
-            set_clause = ", ".join(f"{col} = :{col}" for col in fields)
-            params = {**fields, "id": user_id}
+            set_clause, params = filter_valid_update_clauses(fields, user_id)
 
             query = f"""
             UPDATE users
