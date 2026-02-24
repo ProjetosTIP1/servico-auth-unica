@@ -86,23 +86,26 @@ class UserRepository(IUserRepository):
             raise Exception(f"Error listing users: {e}")
 
     async def update_user(self, user_id: int, user_data: UserUpdateType) -> UserType:
-        """Update an existing user"""
+        """Partially update a user — only columns that were explicitly set are touched."""
         try:
-            query = """
-            UPDATE users 
-            SET username = :username, email = :email, full_name = :full_name, first_name = :first_name, last_name = :last_name, unit = :unit, job = :job, branche = :branche, cpf_cnpj = :cpf_cnpj, registration_number = :registration_number, profile_picture_url = :profile_picture_url 
+            # Build the SET clause only from the fields the client actually sent.
+            # model_dump(exclude_unset=True) ignores fields that were never provided,
+            # even if they allow None (i.e. optional fields keep their DB value).
+            fields = user_data.model_dump(exclude_unset=True)
+            if not fields:
+                # Nothing to update — return the current state.
+                return await self.get_user_by_id(user_id)
+
+            set_clause = ", ".join(f"{col} = :{col}" for col in fields)
+            params = {**fields, "id": user_id}
+
+            query = f"""
+            UPDATE users
+            SET {set_clause}, updated_at = NOW()
             WHERE id = :id
             """
-            await self.db.execute_with_params(
-                query,
-                {
-                    "username": user_data.username,
-                    "email": user_data.email,
-                    "full_name": user_data.full_name,
-                    "id": user_id,
-                },
-            )
-            return await self.get_user_by_username(user_data.username)
+            await self.db.execute_with_params(query, params)
+            return await self.get_user_by_id(user_id)
         except Exception as e:
             raise Exception(f"Error updating user: {e}")
 
