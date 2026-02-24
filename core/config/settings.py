@@ -13,7 +13,9 @@ else:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=ENV_PATH, env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=ENV_PATH, env_file_encoding="utf-8", extra="ignore"
+    )
 
     DEVELOPMENT_ENV: bool = os.getenv("DEVELOPMENT_ENV", "False").lower() in (
         "true",
@@ -31,6 +33,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
         os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
     )
+    REFRESH_TOKEN_EXPIRES_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRES_DAYS", "7"))
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     # pydantic-settings can parse a JSON array string (e.g. '["http://localhost:3000"]')

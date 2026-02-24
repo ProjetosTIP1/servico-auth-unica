@@ -38,7 +38,7 @@ class TokenService(ITokenService):
         if type == TokenType.ACCESS:
             return timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         elif type == TokenType.REFRESH:
-            return timedelta(days=7)
+            return timedelta(days=settings.REFRESH_TOKEN_EXPIRES_DAYS)
         return timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     async def _validate_refresh_token(self, refresh_token_str: str) -> bool:
@@ -68,7 +68,7 @@ class TokenService(ITokenService):
                 message=f"Error validating refresh token: {e}",
                 error_path="TokenService._validate_refresh_token",
             )
-            return False
+            raise e
 
     async def create_access_token(self, user: UserType, parent_token: str) -> str:
         # Implement logic to create an access token based on the provided token creation model
@@ -145,7 +145,7 @@ class TokenService(ITokenService):
             access_token: str = await self.create_access_token(user, refresh_token)
 
             # Revoke the old refresh token
-            await self.token_repository.revoke_token(access_token)
+            await self.token_repository.revoke_token(token.access_token)
             await self.token_repository.revoke_token(token.refresh_token)
 
             # Return the token pair
@@ -162,7 +162,7 @@ class TokenService(ITokenService):
             )
             raise e
 
-    async def get_last_refresh_token(self, user_id: str) -> TokenResponseModel:
+    async def get_last_refresh_token(self, user_id: str) -> TokenType:
         """Retrieve the last refresh token for the given user ID."""
         try:
             token_model = await self.token_repository.get_last_refresh_token(
@@ -170,12 +170,7 @@ class TokenService(ITokenService):
             )
             if not token_model:
                 raise TokenRevokedException("Refresh token not found")
-            return TokenResponseModel(
-                access_token="",  # Access tokens are retrieved separately usually
-                refresh_token=token_model.token,
-                token_type="bearer",
-                expires_in=0,
-            )
+            return token_model
         except Exception as e:
             logger.error(
                 message=f"Error getting last refresh token: {e}",
@@ -183,7 +178,7 @@ class TokenService(ITokenService):
             )
             raise e
 
-    async def update(self, token: TokenUpdateModel) -> TokenResponseModel:
+    async def update(self, token: TokenUpdateModel) -> TokenType:
         """Update the given token and return the updated token."""
         try:
             # Note: repository update typically takes a TokenUpdateModel and updates by token string
@@ -191,12 +186,7 @@ class TokenService(ITokenService):
             token_model = await self.token_repository.update(token)
             if not token_model:
                 raise TokenRevokedException("Token not found")
-            return TokenResponseModel(
-                access_token="",
-                refresh_token=token_model.token,
-                token_type="bearer",
-                expires_in=0,
-            )
+            return token_model
         except Exception as e:
             logger.error(
                 message=f"Error updating token: {e}",
@@ -204,12 +194,12 @@ class TokenService(ITokenService):
             )
             raise e
 
-    async def revoke_token(self, token_response: TokenResponseModel) -> None:
+    async def revoke_token(self, token_response: str) -> None:
         """Revoke the given token."""
         try:
             # We look up the token model by its string first
             token_model = await self.token_repository.get_token_by_string(
-                token_response.refresh_token
+                token_response
             )
             if not token_model:
                 raise TokenRevokedException("Token not found")
@@ -285,7 +275,16 @@ class TokenService(ITokenService):
 
     async def validate_access_token(self, token: str) -> bool:
         try:
-            return validate_token(token)
+            token_model = await self.token_repository.get_token_by_string(token)
+            if not token_model:
+                raise TokenRevokedException("Token not found")
+            if token_model.token_type != TokenType.ACCESS:
+                raise TokenRevokedException("Token is not an access token")
+            if token_model.is_revoked:
+                raise TokenRevokedException("Token is revoked")
+            if token_model.expires_at < datetime.now(timezone.utc):
+                raise TokenRevokedException("Token is expired")
+            return validate_token(token_model.token)
         except Exception as e:
             logger.error(
                 message=f"Error validating access token: {e}",
