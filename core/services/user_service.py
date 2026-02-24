@@ -56,15 +56,10 @@ class UserService(IUserService):
         self, auth_user_id: int, user_data: UserCreateType
     ) -> UserType:
         try:
-            user: UserType = await self.user_repository.get_user_by_username(
+            in_user: UserType = await self.user_repository.get_user_by_username(
                 user_data.username
             )
-            if user:
-                raise ValueError("User already exists")
-            user: UserType = await self.user_repository.get_user_by_email(
-                user_data.email
-            )
-            if user:
+            if in_user or in_user.email == user_data.email:
                 raise ValueError("User already exists")
             hashed_password: str = get_password_hash(user_data.password)
             user: UserType = await self.user_repository.create_user(
@@ -115,7 +110,7 @@ class UserService(IUserService):
             if not passwords_data.new_password or not passwords_data.current_password:
                 raise ValueError("New password and current password are required")
             hashed_password: str = await self.user_repository.get_user_hashed_password(
-                user_id
+                user.username
             )
             if not verify_password(passwords_data.current_password, hashed_password):
                 raise ValueError("Current password is incorrect")
