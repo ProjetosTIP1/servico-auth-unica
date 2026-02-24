@@ -70,24 +70,6 @@ CREATE TABLE IF NOT EXISTS `applications` (
 SELECT 'Table [applications] created successfully.' as Message;
 
 
--- Ramais (phone extensions) table - this table is an example, because the data will be fetched from a dedicated database.
--- Maps to: RamalType model in models.py
--- CREATE TABLE IF NOT EXISTS `ramais` (
---     `id` INT AUTO_INCREMENT PRIMARY KEY,
---     `nome` VARCHAR(255) NOT NULL,
---     `ramal` VARCHAR(255) NOT NULL,
---     `cidade` VARCHAR(20) NOT NULL,
---     `is_active` BOOLEAN DEFAULT TRUE,
---     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
---     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
---     -- Indexes for performance
---     INDEX `idx_ramais_ramal` (`ramal`),
---     INDEX `idx_ramais_nome` (`nome`)
--- ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- SELECT 'Table [ramais] created successfully.' as Message;
-
 -- ==========================================================================
 -- TOKEN MANAGEMENT TABLES
 -- ==========================================================================
