@@ -1,0 +1,178 @@
+/* ===========================
+   Backdrop / Blur overlay
+   (tablet-first: 768px–1024px as baseline)
+   =========================== */
+
+.blur {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background-color: var(--glass-color);
+  position: fixed;
+  padding: 0.75rem;
+  transition: all 0.3s ease-in-out;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* ===========================
+   Modal Card
+   =========================== */
+
+.modal {
+  border-radius: 14px;
+  border: 1px solid var(--secondary-color);
+  word-wrap: break-word;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  animation: show 0.3s ease-in-out;
+  max-height: 90dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: 70vw;
+}
+
+.modal.hidden {
+  animation: hide 0.3s ease-in-out forwards;
+  pointer-events: none;
+}
+
+/* ===========================
+   Close Button
+   — 44×44px minimum tap target (Apple HIG / WCAG)
+   =========================== */
+
+.closeButton {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-color);
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 1;
+}
+
+.closeButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.closeButton:active {
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: scale(0.95);
+}
+
+/* ===========================
+   Animations
+   — Scale + fade for centered modals (natural on touch)
+   =========================== */
+
+@keyframes show {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes hide {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+}
+
+/* ================================================================
+   RESPONSIVE BREAKPOINTS
+   ================================================================ */
+
+/* Small phones (≤ 480px) */
+@media (max-width: 480px) {
+  .blur {
+    padding: 0.5rem;
+  }
+
+  .modal {
+    border-radius: 12px;
+    gap: 10px;
+    max-width: 95vw;
+    max-height: 85dvh;
+  }
+
+  .closeButton {
+    top: 6px;
+    right: 8px;
+    font-size: 1.35rem;
+  }
+}
+
+/* Large phones / small tablets (481px–767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+  .modal {
+    max-width: 85vw;
+    max-height: 88dvh;
+  }
+}
+
+/* Tablets portrait (768px–1024px) — PRIMARY TARGET */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .blur {
+    padding: 1rem;
+  }
+
+  .modal {
+    border-radius: 16px;
+    gap: 14px;
+    max-width: 65vw;
+    max-height: 90dvh;
+  }
+
+  .closeButton {
+    top: 10px;
+    right: 14px;
+    font-size: 1.6rem;
+  }
+}
+
+/* Tablets landscape / small desktop (1025px–1279px) */
+@media (min-width: 1025px) and (max-width: 1279px) {
+  .modal {
+    max-width: 50vw;
+    gap: 15px;
+  }
+}
+
+/* Desktop (≥ 1280px) */
+@media (min-width: 1280px) {
+  .blur {
+    padding: 1rem;
+  }
+
+  .modal {
+    border-radius: 16px;
+    gap: 15px;
+    max-width: 40vw;
+  }
+
+  .closeButton {
+    top: 10px;
+    right: 20px;
+  }
+}
