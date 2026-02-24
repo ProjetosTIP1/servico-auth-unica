@@ -1,5 +1,3 @@
-"use client";
-
 import style from "./style.module.css";
 
 const SlideInEffect = ({
