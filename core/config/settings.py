@@ -36,9 +36,17 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRES_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRES_DAYS", "7"))
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
-    # pydantic-settings can parse a JSON array string (e.g. '["http://localhost:3000"]')
-    # directly into a list — no manual json.loads() needed.
-    ALLOWED_ORIGINS: list[str] = os.getenv("ALLOWED_ORIGINS", '["http://localhost:5137"]').split(",")
+    # pydantic-settings can parse a JSON array string from env (e.g.
+    # ALLOWED_ORIGINS='["http://localhost:5137","http://localhost:5173"]')
+    # directly into list[str].
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5137",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5137",
+        "http://127.0.0.1:5173",
+    ]
 
     MARIADB_HOST: str = os.getenv("MARIADB_HOST", "your_mariadb_host")
     MARIADB_PORT: int = int(os.getenv("MARIADB_PORT", "3306"))

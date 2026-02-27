@@ -70,6 +70,7 @@ async def logout(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@oauth_router.post("/token/", response_model=TokenResponseModel, include_in_schema=False)
 @oauth_router.post("/token", response_model=TokenResponseModel)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
