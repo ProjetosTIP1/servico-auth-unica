@@ -13,6 +13,7 @@ from core.helpers.logger_helper import logger
 
 from core.config.settings import settings
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
