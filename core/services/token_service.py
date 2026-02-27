@@ -293,8 +293,8 @@ class TokenService(ITokenService):
             if token_model.expires_at < datetime.now(timezone.utc):
                 raise TokenRevokedException("Token is expired")
             if not validate_token(token_model.token):
-                raise TokenRevokedException("Token is invalid")
-            return True if validate_token(token_model.token) else False
+                return False
+            return True
         except Exception as e:
             logger.error(
                 message=f"Error validating access token: {e}",
