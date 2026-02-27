@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     # pydantic-settings can parse a JSON array string (e.g. '["http://localhost:3000"]')
     # directly into a list — no manual json.loads() needed.
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    ALLOWED_ORIGINS: list[str] = os.getenv("ALLOWED_ORIGINS", '["http://localhost:5137"]').split(",")
 
     MARIADB_HOST: str = os.getenv("MARIADB_HOST", "your_mariadb_host")
     MARIADB_PORT: int = int(os.getenv("MARIADB_PORT", "3306"))
