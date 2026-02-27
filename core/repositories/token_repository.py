@@ -28,7 +28,10 @@ class TokenRepository(ITokenRepository):
                 },
             )
             logger.debug(message=f"Access token created for user ID: {token.user_id}")
-            return await self.get_token_by_string(token.token)
+            token: TokenModel | None = await self.get_token_by_string(token.token)
+            if not token:
+                raise Exception("Token not found after creation")
+            return token
         except Exception as e:
             logger.error(
                 message=f"Error creating access token: {str(e)}",
@@ -54,7 +57,10 @@ class TokenRepository(ITokenRepository):
                 },
             )
             logger.debug(message=f"Refresh token created for user ID: {token.user_id}")
-            return await self.get_token_by_string(token.token)
+            token: TokenModel | None = await self.get_token_by_string(token.token)
+            if not token:
+                raise Exception("Token not found after creation")
+            return token
         except Exception as e:
             logger.error(
                 message=f"Error creating refresh token: {str(e)}",
@@ -62,7 +68,7 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error creating refresh token: {str(e)}")
 
-    async def get_last_refresh_token(self, user_id: int) -> TokenModel:
+    async def get_last_refresh_token(self, user_id: str) -> TokenModel:
         """Retrieve the most recent refresh token for a user."""
         try:
             query = """
@@ -82,7 +88,7 @@ class TokenRepository(ITokenRepository):
                 user_id=token_data["user_id"],
                 token=token_data["token"],
                 type=TokenType(value=token_data["type"]),
-                parent_token=token_data.get("parent_token"),
+                parent_token=str(token_data.get("parent_token")),
                 revoked=token_data["revoked"],
                 consumed_at=token_data.get("consumed_at"),
                 expires_at=token_data["expires_at"],
@@ -114,7 +120,7 @@ class TokenRepository(ITokenRepository):
                 user_id=token_data["user_id"],
                 token=token_data["token"],
                 type=TokenType(value=token_data["type"]),
-                parent_token=token_data.get("parent_token"),
+                parent_token=str(token_data.get("parent_token")),
                 revoked=token_data["revoked"],
                 consumed_at=token_data.get("consumed_at"),
                 expires_at=token_data["expires_at"],

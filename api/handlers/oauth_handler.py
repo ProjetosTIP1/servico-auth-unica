@@ -86,3 +86,19 @@ async def login(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+@oauth_router.post("/token/validate", response_model=ResponseModel)
+async def validate_token(
+    token_request: TokenRequestModel,
+    service: TokenServiceDeps,
+) -> ResponseModel:
+    """Validate an authentication token and return the result."""
+    try:
+        is_valid = await service.validate_access_token(token_request.access_token)
+        if is_valid:
+            return ResponseModel(code=200, status="success", message="Token is valid")
+        else:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

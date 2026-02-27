@@ -32,7 +32,7 @@ class ITokenRepository(ABC):
         pass
 
     @abstractmethod
-    async def revoke_token(self, token: TokenModel) -> None:
+    async def revoke_token(self, token: str) -> None:
         """Revoke the given token."""
         pass
 

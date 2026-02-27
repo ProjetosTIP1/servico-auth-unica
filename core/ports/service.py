@@ -40,7 +40,7 @@ class ITokenService(ABC):
         pass
 
     @abstractmethod
-    async def revoke_token(self, token_response: TokenResponseModel) -> None:
+    async def revoke_token(self, token_response: str) -> None:
         """Revoke the given token."""
         pass
 
