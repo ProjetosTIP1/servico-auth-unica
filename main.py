@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from api.handlers.oauth_handler import oauth_router
@@ -10,6 +11,7 @@ from api.middlewares.correlation_id_mw import correlation_id_middleware
 
 from core.helpers.logger_helper import logger
 
+from core.config.settings import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,6 +36,15 @@ app = FastAPI(
 )
 # Register middleware
 app.middleware(middleware_type="http")(correlation_id_middleware)
+
+# Register CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Register routers
 app.include_router(router=oauth_router, tags=["OAuth"])
