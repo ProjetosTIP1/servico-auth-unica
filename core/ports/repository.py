@@ -46,27 +46,27 @@ class IUserRepository(ABC):
     """Abstract interface for user repository operations"""
 
     @abstractmethod
-    async def get_user_by_username(self, username: str) -> UserType:
+    async def get_user_by_username(self, username: str) -> UserType | None:
         """Get user by username"""
         pass
 
     @abstractmethod
-    async def get_user_by_id(self, user_id: int) -> UserType:
+    async def get_user_by_id(self, user_id: int) -> UserType | None:
         """Get user by ID"""
         pass
 
     @abstractmethod
-    async def get_user_by_email(self, email: str) -> UserType:
+    async def get_user_by_email(self, email: str) -> UserType | None:
         """Get user by email"""
         pass
 
     @abstractmethod
-    async def get_user_by_ms_oid(self, ms_oid: str) -> UserType:
+    async def get_user_by_ms_oid(self, ms_oid: str) -> UserType | None:
         """Get user by Microsoft object ID"""
         pass
 
     @abstractmethod
-    async def get_user_hashed_password(self, username: str) -> str:
+    async def get_user_hashed_password(self, username: str) -> str | None:
         """Get the hashed password for a user by username"""
         pass
 
@@ -90,7 +90,7 @@ class IUserRepository(ABC):
     @abstractmethod
     async def update_user_password(
         self, user_id: int, hashed_password: str
-    ) -> UserType:
+    ) -> UserType | None:
         """Update the password of an existing user"""
         pass
 

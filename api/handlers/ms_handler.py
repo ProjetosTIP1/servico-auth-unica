@@ -10,17 +10,19 @@ No business logic lives here. Following the Single Responsibility Principle
 (SRP), business decisions stay in the Application layer (services).
 """
 
-from fastapi import APIRouter, Depends, status
+from typing import Optional
+from fastapi import APIRouter, Depends, status, Response
 from pydantic import BaseModel
 
-from core.models.user_models import MicrosoftUserIdentity
+from core.models.user_models import MicrosoftUserIdentity, UserType
 from core.services.microsoft_login_service import (
     MicrosoftLoginResult,
     MicrosoftLoginService,
 )
 from core.util.deps import get_microsoft_login_service, require_microsoft_user
+from core.config.settings import settings
 
-ms_router = APIRouter(tags=["Authentication"])
+ms_router = APIRouter(prefix="/auth/microsoft", tags=["Authentication"])
 
 
 # ── Request / Response schemas ─────────────────────────────────────────────────
@@ -35,11 +37,12 @@ class MicrosoftTokenRequest(BaseModel):
 class MicrosoftLoginResponse(BaseModel):
     """Slim public-facing representation of a successful login result."""
 
-    oid: str
+    oid: Optional[str] = None
     email: str
-    name: str | None
-    roles: list[str]
-    is_new_user: bool
+    name: Optional[str] = None
+    roles: list[str] = []
+    is_new_user: bool = False
+    user: Optional[UserType] = None
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
@@ -53,24 +56,34 @@ class MicrosoftLoginResponse(BaseModel):
     description=(
         "Accepts a raw Microsoft JWT (id_token or access_token obtained by the "
         "frontend via MSAL.js / MSAL Python) and validates it against Azure AD's "
-        "public keys.  Returns the verified user identity on success."
+        "public keys. Returns the verified user identity and sets session cookies on success."
     ),
 )
 async def validate_microsoft_token(
     body: MicrosoftTokenRequest,
+    response: Response,
     service: MicrosoftLoginService = Depends(dependency=get_microsoft_login_service),
 ) -> MicrosoftLoginResponse:
     """
     POST /auth/microsoft/validate
-
-    Frontend flow reminder:
-      1. User clicks "Sign in with Microsoft" on the frontend.
-      2. Frontend (using MSAL.js) redirects to Microsoft login.
-      3. Microsoft returns an `id_token` / `access_token` to the frontend.
-      4. Frontend sends that token to this endpoint.
-      5. This endpoint validates and returns the user's identity.
     """
     result: MicrosoftLoginResult = await service.execute(token=body.token)
+
+    # Set cookies
+    response.set_cookie(
+        key=settings.COOKIE_ACCESS_TOKEN_NAME,
+        value=result.tokens.access_token,
+        httponly=settings.COOKIE_HTTPONLY,
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+    )
+    response.set_cookie(
+        key=settings.COOKIE_REFRESH_TOKEN_NAME,
+        value=result.tokens.refresh_token,
+        httponly=settings.COOKIE_HTTPONLY,
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+    )
 
     return MicrosoftLoginResponse(
         oid=result.identity.oid,
@@ -78,6 +91,7 @@ async def validate_microsoft_token(
         name=result.identity.name,
         roles=result.identity.roles,
         is_new_user=result.is_new_user,
+        user=result.user,
     )
 
 

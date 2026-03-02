@@ -11,7 +11,7 @@ class UserRepository(IUserRepository):
     def __init__(self, db: IDatabase):
         self.db = db
 
-    async def get_user_by_username(self, username: str) -> UserType:
+    async def get_user_by_username(self, username: str) -> UserType | None:
         """Get user by username"""
         try:
             query = """
@@ -27,7 +27,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by username: {e}")
 
-    async def get_user_by_id(self, user_id: int) -> UserType:
+    async def get_user_by_id(self, user_id: int) -> UserType | None:
         """Get user by ID"""
         try:
             query = """
@@ -43,7 +43,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by ID: {e}")
 
-    async def get_user_by_email(self, email: str) -> UserType:
+    async def get_user_by_email(self, email: str) -> UserType | None:
         """Get user by email"""
         try:
             query = """
@@ -59,7 +59,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by email: {e}")
 
-    async def get_user_by_ms_oid(self, ms_oid: str) -> UserType:
+    async def get_user_by_ms_oid(self, ms_oid: str) -> UserType | None:
         """Get user by Microsoft object ID"""
         try:
             query = """
@@ -75,7 +75,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by MS OID: {e}")
 
-    async def get_user_hashed_password(self, username: str) -> str:
+    async def get_user_hashed_password(self, username: str) -> str | None:
         """Get the hashed password for a user by username"""
         try:
             query = """
@@ -102,9 +102,12 @@ class UserRepository(IUserRepository):
             await self.db.execute_with_params(
                 query, {**user_data.model_dump(), "hashed_password": hashed_password}
             )
-            return await self.get_user_by_username(user_data.username)
+            new_user: UserType | None = await self.get_user_by_username(user_data.username)
+            if new_user is None:
+                raise Exception("Error creating user: User not found after creation")
+            return new_user
         except Exception as e:
-            raise Exception(f"Error creating user: {e[:50]}")
+            raise Exception(f"Error creating user: {e}")
 
     async def list_users(self) -> List[UserType]:
         """List all users"""
@@ -127,8 +130,10 @@ class UserRepository(IUserRepository):
             # even if they allow None (i.e. optional fields keep their DB value).
             fields = user_data.model_dump(exclude_unset=True)
             if not fields:
-                # Nothing to update — return the current state.
-                return await self.get_user_by_id(user_id)
+                user: UserType | None = await self.get_user_by_id(user_id)
+                if user is None:
+                    raise Exception("User not found")
+                return user
 
             set_clause, params = filter_valid_update_clauses(fields, user_id)
 
@@ -138,7 +143,10 @@ class UserRepository(IUserRepository):
             WHERE id = :id
             """
             await self.db.execute_with_params(query, params)
-            return await self.get_user_by_id(user_id)
+            up_user: UserType | None = await self.get_user_by_id(user_id)
+            if up_user is None:
+                raise Exception("User not found after update")
+            return up_user
         except Exception as e:
             raise Exception(f"Error updating user: {e}")
 
