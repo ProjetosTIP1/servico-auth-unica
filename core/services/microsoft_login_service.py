@@ -12,11 +12,15 @@ Architecture notes:
   pass mock implementations in tests, real adapters in production.
 """
 
+import secrets
 from dataclasses import dataclass
 
-from core.models.user_models import MicrosoftUserIdentity
-from core.ports.service import IMicrosoftAuthService
+from core.models.user_models import MicrosoftUserIdentity, UserType, UserCreateType
+from core.models.oauth_models import TokenResponseModel
+from core.ports.service import IMicrosoftAuthService, ITokenService
+from core.ports.repository import IUserRepository
 from core.helpers.logger_helper import logger
+from core.helpers.authentication_helper import get_password_hash
 
 
 @dataclass
@@ -24,67 +28,93 @@ class MicrosoftLoginResult:
     """
     Output value object returned after a successful Microsoft login.
 
-    Contains the verified identity from Azure AD plus an optional flag
-    indicating whether the user was just created in the local database
-    (useful for onboarding flows / first-login welcome screens).
+    Contains our system's tokens, the user information, and a flag
+    indicating whether the user was just created.
     """
 
+    tokens: TokenResponseModel
+    user: UserType
     identity: MicrosoftUserIdentity
     is_new_user: bool = False
 
 
 class MicrosoftLoginService:
     """
-    Use case: validate a Microsoft-issued token and return the authenticated
-    user's identity.
-
-    Optionally, it can auto-provision a local user record on first login
-    (the "just-in-time provisioning" pattern common in SSO scenarios).
-
-    Inject this service via FastAPI's dependency injection system — see
-    `api/handlers/auth_handler.py` for usage.
+    Use case: validate a Microsoft-issued token, resolve (or provision)
+    the local user record, and issue our own session tokens.
     """
 
-    def __init__(self, ms_auth: IMicrosoftAuthService) -> None:
-        # Depends on the abstraction (port), not the concrete adapter.
-        # This is the Dependency Inversion Principle in practice.
+    def __init__(
+        self,
+        ms_auth: IMicrosoftAuthService,
+        user_repo: IUserRepository,
+        token_service: ITokenService,
+    ) -> None:
         self._ms_auth = ms_auth
+        self._user_repo = user_repo
+        self._token_service = token_service
 
     async def execute(self, token: str) -> MicrosoftLoginResult:
         """
-        Validate the bearer token and return the resolved user identity.
-
-        Steps:
-          1. Delegate cryptographic validation to the infrastructure adapter.
-          2. (Optional) Look up or create the user in your local database.
-          3. Return a clean result object.
-
-        Args:
-            token: Raw JWT string from the Authorization header (no "Bearer " prefix).
-
-        Raises:
-            MicrosoftAuthError: forwarded from the adapter if the token is invalid.
+        Validate the bearer token, sync the user, and issue session tokens.
         """
-        # Step 1 — pure cryptographic validation (done by the infrastructure adapter)
+        # Step 1 — validate Microsoft token
         identity = await self._ms_auth.validate_token(token)
 
         logger.info(
             message=f"Microsoft token validated for user oid={identity.oid} email={identity.email}"
         )
 
-        # Step 2 — local user provisioning (plug in your UserRepository here)
-        # Example (uncomment and adapt when your repository is ready):
-        #
-        #   user = await self._user_repo.find_by_ms_oid(identity.oid)
-        #   is_new = False
-        #   if user is None:
-        #       user = await self._user_repo.create_from_ms_identity(identity)
-        #       is_new = True
-        #
-        # For now we keep it simple and just return the identity.
+        # Step 2 — Sync user with local database
+        user = await self._user_repo.get_user_by_ms_oid(identity.oid)
         is_new_user = False
 
-        return MicrosoftLoginResult(identity=identity, is_new_user=is_new_user)
+        if user is None:
+            # Check if user exists by email (link MS account to existing email)
+            user = await self._user_repo.get_user_by_email(identity.email)
+
+            if user:
+                # Update existing user with MS OID
+                from core.models.user_models import UserUpdateType
+
+                await self._user_repo.update_user(
+                    user.id, UserUpdateType(ms_oid=identity.oid)
+                )
+                user = await self._user_repo.get_user_by_id(user.id)
+            else:
+                # Create new user
+                new_user_data = UserCreateType(
+                    username=identity.preferred_username or identity.email,
+                    email=identity.email,
+                    ms_oid=identity.oid,
+                    full_name=identity.name,
+                    first_name=identity.given_name,
+                    last_name=identity.family_name,
+                )
+                # Random password since they login via MS
+                random_password = secrets.token_urlsafe(32)
+                hashed_password = get_password_hash(random_password)
+                user = await self._user_repo.create_user(new_user_data, hashed_password)
+                is_new_user = True
+
+        # Step 3 — Issue our own tokens
+        # We need a refresh token and an access token
+        refresh_token = await self._token_service.create_refresh_token(user, "")
+        access_token = await self._token_service.create_access_token(user, refresh_token)
+
+        from datetime import datetime, timedelta, timezone
+        from core.config.settings import settings
+
+        tokens = TokenResponseModel(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=datetime.now(timezone.utc)
+            + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        )
+
+        return MicrosoftLoginResult(
+            tokens=tokens, user=user, identity=identity, is_new_user=is_new_user
+        )
 
     async def get_auth_url(self, redirect_uri: str, scopes: list[str]) -> str:
         """

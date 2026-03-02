@@ -96,6 +96,9 @@ class UserUpdateType(BaseModel):
     email: Optional[str] = Field(
         default=None, description="The email address of the user"
     )
+    ms_oid: Optional[str] = Field(
+        default=None, description="The Microsoft object ID of the user"
+    )
     full_name: Optional[str] = Field(
         default=None, description="The full name of the user"
     )
