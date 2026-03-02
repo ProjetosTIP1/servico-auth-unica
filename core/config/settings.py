@@ -36,6 +36,24 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRES_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRES_DAYS", "7"))
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
+
+    # ── Cookie Settings ────────────────────────────────────────────────────────
+    COOKIE_ACCESS_TOKEN_NAME: str = os.getenv("COOKIE_ACCESS_TOKEN_NAME", "access_token")
+    COOKIE_REFRESH_TOKEN_NAME: str = os.getenv(
+        "COOKIE_REFRESH_TOKEN_NAME", "refresh_token"
+    )
+    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "False").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+    COOKIE_HTTPONLY: bool = os.getenv("COOKIE_HTTPONLY", "True").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+    COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
+
     # pydantic-settings can parse a JSON array string from env (e.g.
     # ALLOWED_ORIGINS='["http://localhost:5137","http://localhost:5173"]')
     # directly into list[str].

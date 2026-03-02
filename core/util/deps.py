@@ -16,12 +16,12 @@ from functools import lru_cache
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from core.config.settings import settings
 from core.infrastructure.database_manager import DatabaseManager
 from core.infrastructure.microsoft_auth_adapter import (
     MicrosoftAuthAdapter,
     MicrosoftAuthError,
 )
-from core.helpers.authentication_helper import oauth2_scheme
 
 from core.repositories.user_repository import UserRepository
 from core.repositories.token_repository import TokenRepository
@@ -38,6 +38,34 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 
 
 # ── Infrastructure adapter factory ────────────────────────────────────────────
+def get_token_from_request(request: Request) -> str | None:
+    """
+    Extract the access token from either the Authorization header or a cookie.
+    Priority:
+      1. Cookie (more secure for web apps)
+      2. Authorization header (standard for APIs)
+    """
+    # 1. Check cookie
+    token = request.cookies.get(settings.COOKIE_ACCESS_TOKEN_NAME)
+    if token:
+        return token
+
+    # 2. Check Authorization header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        return auth_header.split(" ")[1]
+
+    return None
+
+
+def get_refresh_token_from_request(request: Request) -> str | None:
+    """Extract the refresh token from either a cookie or the request body."""
+    # 1. Check cookie
+    token = request.cookies.get(settings.COOKIE_REFRESH_TOKEN_NAME)
+    if token:
+        return token
+
+    return None
 
 
 @lru_cache(maxsize=1)
@@ -105,12 +133,12 @@ def get_user_service(
 
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
+    token: Annotated[str, Depends(get_token_from_request)],
     user_repo: Annotated[IUserRepository, Depends(get_user_repository)],
     token_repo: Annotated[ITokenRepository, Depends(get_token_repository)],
 ) -> UserType:
     """
-    Extract and validate the current user from the Bearer access token.
+    Extract and validate the current user from the access token (cookie or header).
 
     Validation is performed in three layers:
       1. Cryptographic — signature + expiry (fast, no DB hit).
@@ -125,6 +153,9 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if token is None:
+        raise credentials_exception
 
     # ── 1. Cryptographic validation ───────────────────────────────────────────
     payload = validate_token(token)
@@ -179,15 +210,16 @@ async def get_current_user(
     return user
 
 
-def get_current_token(request: Request) -> str | None:
+def get_current_token(
+    token: Annotated[str | None, Depends(get_token_from_request)],
+) -> str | None:
     """
-    Extract and validate user from JWT token.
+    Extract and validate user from JWT token (cookie or header).
     Returns a User object if authentication is successful.
     Raises HTTPException if authentication fails.
     """
-    token: str | None = request.headers.get("Authorization")
     if token is None:
-        raise HTTPException(status_code=401, detail="Missing Authorization header.")
+        raise HTTPException(status_code=401, detail="Missing authentication token.")
     return token
 
 

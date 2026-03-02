@@ -101,11 +101,11 @@ class TokenRequestModel(BaseModel):
     user_id: int = Field(
         default=..., description="The ID of the user associated with the token"
     )
-    access_token: str = Field(
-        default=..., description="The access token string, typically a JWT"
+    access_token: Optional[str] = Field(
+        default=None, description="The access token string, typically a JWT"
     )
-    refresh_token: str = Field(
-        default=..., description="The refresh token string, typically a JWT"
+    refresh_token: Optional[str] = Field(
+        default=None, description="The refresh token string, typically a JWT"
     )
 
 

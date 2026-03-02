@@ -1,8 +1,13 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
-from core.util.deps import AuthenticatedUser, TokenServiceDeps
+from core.util.deps import (
+    AuthenticatedUser,
+    TokenServiceDeps,
+    get_token_from_request,
+    get_refresh_token_from_request,
+)
 
 from core.models.user_models import UserType
 from core.models.oauth_models import (
@@ -16,6 +21,8 @@ from core.helpers.exceptions_helper import (
     TokenRevokedException,
     UserNotFoundException,
 )
+
+from core.config.settings import settings
 
 oauth_router = APIRouter(
     prefix="/o",
@@ -38,12 +45,46 @@ async def get_current_user(
 
 @oauth_router.post("/refresh", response_model=TokenResponseModel)
 async def refresh_token(
-    token_request: TokenRequestModel,
+    response: Response,
     service: TokenServiceDeps,
+    token_request: TokenRequestModel,
+    access_token: Annotated[str | None, Depends(get_token_from_request)] = None,
+    refresh_token: Annotated[
+        str | None, Depends(get_refresh_token_from_request)
+    ] = None,
 ) -> TokenResponseModel:
     """Refresh the authentication token for the current user."""
     try:
-        return await service.create_token_pair(token_request)
+        # Priority: Cookies > Request Body
+        final_access_token = access_token or token_request.access_token
+        final_refresh_token = refresh_token or token_request.refresh_token
+
+        if not final_access_token or not final_refresh_token:
+            raise HTTPException(status_code=401, detail="Tokens missing")
+
+        # Update token_request with found tokens for service call
+        token_request.access_token = final_access_token
+        token_request.refresh_token = final_refresh_token
+
+        tokens = await service.create_token_pair(token_request)
+
+        # Set new cookies
+        response.set_cookie(
+            key=settings.COOKIE_ACCESS_TOKEN_NAME,
+            value=tokens.access_token,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=settings.COOKIE_SECURE,
+            samesite=settings.COOKIE_SAMESITE,
+        )
+        response.set_cookie(
+            key=settings.COOKIE_REFRESH_TOKEN_NAME,
+            value=tokens.refresh_token,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=settings.COOKIE_SECURE,
+            samesite=settings.COOKIE_SAMESITE,
+        )
+
+        return tokens
     except SecurityBreachException as e:
         raise HTTPException(status_code=403, detail=str(e))
     except TokenRevokedException as e:
@@ -56,13 +97,34 @@ async def refresh_token(
 
 @oauth_router.post("/logout", response_model=ResponseModel)
 async def logout(
+    response: Response,
     authenticated_user: AuthenticatedUser,
     service: TokenServiceDeps,
-    token: TokenRequestModel,
+    token_request: TokenRequestModel,
+    access_token: Annotated[str | None, Depends(get_token_from_request)] = None,
+    refresh_token: Annotated[
+        str | None, Depends(get_refresh_token_from_request)
+    ] = None,
 ) -> ResponseModel:
     """Log out the current user by invalidating their authentication token."""
     try:
-        await service.logout(authenticated_user.id, token)
+        # Priority: Cookies > Request Body
+        final_access_token = access_token or token_request.access_token
+        final_refresh_token = refresh_token or token_request.refresh_token
+
+        if not final_access_token or not final_refresh_token:
+            raise HTTPException(status_code=401, detail="Tokens missing")
+
+        # Update token_request with found tokens for service call
+        token_request.access_token = final_access_token
+        token_request.refresh_token = final_refresh_token
+
+        await service.logout(authenticated_user.id, token_request)
+
+        # Delete cookies
+        response.delete_cookie(key=settings.COOKIE_ACCESS_TOKEN_NAME)
+        response.delete_cookie(key=settings.COOKIE_REFRESH_TOKEN_NAME)
+
         return ResponseModel(
             code=200, status="success", message="Logged out successfully"
         )
@@ -70,9 +132,12 @@ async def logout(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@oauth_router.post("/token/", response_model=TokenResponseModel, include_in_schema=False)
+@oauth_router.post(
+    "/token/", response_model=TokenResponseModel, include_in_schema=False
+)
 @oauth_router.post("/token", response_model=TokenResponseModel)
 async def login(
+    response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     service: TokenServiceDeps,
 ) -> TokenResponseModel:
@@ -81,7 +146,25 @@ async def login(
     This endpoint is PUBLIC — no authentication required.
     """
     try:
-        return await service.login(form_data.username, form_data.password)
+        tokens = await service.login(form_data.username, form_data.password)
+
+        # Set cookies
+        response.set_cookie(
+            key=settings.COOKIE_ACCESS_TOKEN_NAME,
+            value=tokens.access_token,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=settings.COOKIE_SECURE,
+            samesite=settings.COOKIE_SAMESITE,
+        )
+        response.set_cookie(
+            key=settings.COOKIE_REFRESH_TOKEN_NAME,
+            value=tokens.refresh_token,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=settings.COOKIE_SECURE,
+            samesite=settings.COOKIE_SAMESITE,
+        )
+
+        return tokens
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -92,10 +175,15 @@ async def login(
 async def validate_token(
     token_request: TokenRequestModel,
     service: TokenServiceDeps,
+    access_token: Annotated[str | None, Depends(get_token_from_request)] = None,
 ) -> ResponseModel:
     """Validate an authentication token and return the result."""
     try:
-        is_valid = await service.validate_access_token(token_request.access_token)
+        final_access_token = access_token or token_request.access_token
+        if not final_access_token:
+            raise HTTPException(status_code=401, detail="Token missing")
+
+        is_valid = await service.validate_access_token(final_access_token)
         if is_valid:
             return ResponseModel(code=200, status="success", message="Token is valid")
         else:
