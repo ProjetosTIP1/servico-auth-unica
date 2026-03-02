@@ -100,7 +100,9 @@ class MicrosoftLoginService:
         # Step 3 — Issue our own tokens
         # We need a refresh token and an access token
         refresh_token = await self._token_service.create_refresh_token(user, "")
-        access_token = await self._token_service.create_access_token(user, refresh_token)
+        access_token = await self._token_service.create_access_token(
+            user, refresh_token
+        )
 
         from datetime import datetime, timedelta, timezone
         from core.config.settings import settings

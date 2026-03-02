@@ -99,7 +99,9 @@ def get_token_repository(
 ) -> TokenRepository:
     """Provide a new instance of the TokenRepository."""
     if db_manager.mariadb is None:
-        raise HTTPException(status_code=500, detail="MariaDB connection not initialized")
+        raise HTTPException(
+            status_code=500, detail="MariaDB connection not initialized"
+        )
     return TokenRepository(db=db_manager.mariadb)
 
 
@@ -108,7 +110,9 @@ def get_user_repository(
 ) -> IUserRepository:
     """Provide a new instance of the UserRepository."""
     if db_manager.mariadb is None:
-        raise HTTPException(status_code=500, detail="MariaDB connection not initialized")
+        raise HTTPException(
+            status_code=500, detail="MariaDB connection not initialized"
+        )
     return UserRepository(db=db_manager.mariadb)
 
 

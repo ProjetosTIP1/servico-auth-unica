@@ -102,7 +102,9 @@ class UserRepository(IUserRepository):
             await self.db.execute_with_params(
                 query, {**user_data.model_dump(), "hashed_password": hashed_password}
             )
-            new_user: UserType | None = await self.get_user_by_username(user_data.username)
+            new_user: UserType | None = await self.get_user_by_username(
+                user_data.username
+            )
             if new_user is None:
                 raise Exception("Error creating user: User not found after creation")
             return new_user
