@@ -15,7 +15,7 @@ class UserRepository(IUserRepository):
         """Get user by username"""
         try:
             query = """
-            SELECT id, username, email, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
+            SELECT id, username, email, ms_oid, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
             FROM users 
             WHERE username = :username AND is_active = 1
             """
@@ -31,7 +31,7 @@ class UserRepository(IUserRepository):
         """Get user by ID"""
         try:
             query = """
-            SELECT id, username, email, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
+            SELECT id, username, email, ms_oid, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
             FROM users 
             WHERE id = :id AND is_active = 1
             """
@@ -47,7 +47,7 @@ class UserRepository(IUserRepository):
         """Get user by email"""
         try:
             query = """
-            SELECT id, username, email, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
+            SELECT id, username, email, ms_oid, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
             FROM users 
             WHERE email = :email AND is_active = 1
             """
@@ -58,6 +58,22 @@ class UserRepository(IUserRepository):
             return None
         except Exception as e:
             raise Exception(f"Error fetching user by email: {e}")
+
+    async def get_user_by_ms_oid(self, ms_oid: str) -> UserType:
+        """Get user by Microsoft object ID"""
+        try:
+            query = """
+            SELECT id, username, email, ms_oid, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
+            FROM users 
+            WHERE ms_oid = :ms_oid AND is_active = 1
+            """
+            results = await self.db.execute_with_params(query, {"ms_oid": ms_oid})
+            if results:
+                user_data = results[0]
+                return UserType(**user_data)
+            return None
+        except Exception as e:
+            raise Exception(f"Error fetching user by MS OID: {e}")
 
     async def get_user_hashed_password(self, username: str) -> str:
         """Get the hashed password for a user by username"""
@@ -80,21 +96,21 @@ class UserRepository(IUserRepository):
         """Create a new user"""
         try:
             query = """
-            INSERT INTO users (username, email, full_name, first_name, last_name, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, hashed_password) 
-            VALUES (:username, :email, :full_name, :first_name, :last_name, :unit, :job, :branche, :cpf_cnpj, :registration_number, :profile_picture_url, :hashed_password)
+            INSERT INTO users (username, email, ms_oid, full_name, first_name, last_name, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, hashed_password) 
+            VALUES (:username, :email, :ms_oid, :full_name, :first_name, :last_name, :unit, :job, :branche, :cpf_cnpj, :registration_number, :profile_picture_url, :hashed_password)
             """
             await self.db.execute_with_params(
-                query, {**user_data.dict(), "hashed_password": hashed_password}
+                query, {**user_data.model_dump(), "hashed_password": hashed_password}
             )
             return await self.get_user_by_username(user_data.username)
         except Exception as e:
-            raise Exception(f"Error creating user: {e[:25]}")
+            raise Exception(f"Error creating user: {e[:50]}")
 
     async def list_users(self) -> List[UserType]:
         """List all users"""
         try:
             query = """
-            SELECT id, username, email, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, is_active, created_at, updated_at 
+            SELECT id, username, email, ms_oid, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, is_active, created_at, updated_at 
             FROM users 
             WHERE is_active = 1
             """

@@ -61,6 +61,11 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_user_by_ms_oid(self, ms_oid: str) -> UserType:
+        """Get user by Microsoft object ID"""
+        pass
+
+    @abstractmethod
     async def get_user_hashed_password(self, username: str) -> str:
         """Get the hashed password for a user by username"""
         pass

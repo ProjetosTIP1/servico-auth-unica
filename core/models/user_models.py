@@ -7,6 +7,9 @@ class UserType(BaseModel):
     id: int = Field(default=..., description="The unique identifier of the user")
     username: str = Field(default=..., description="The username of the user")
     email: str = Field(default=..., description="The email address of the user")
+    ms_oid: Optional[str] = Field(
+        default=None, description="The Microsoft object ID of the user"
+    )
     is_active: bool = Field(
         default=True, description="Indicates whether the user account is active"
     )
@@ -51,7 +54,12 @@ class UserType(BaseModel):
 class UserCreateType(BaseModel):
     username: str = Field(default=..., description="The username of the user")
     email: str = Field(default=..., description="The email address of the user")
-    password: str = Field(default=..., description="The password for the user account")
+    ms_oid: Optional[str] = Field(
+        default=None, description="The Microsoft object ID of the user"
+    )
+    password: Optional[str] = Field(
+        default=None, description="The password for the user account"
+    )
     full_name: Optional[str] = Field(
         default=None, description="The full name of the user"
     )
