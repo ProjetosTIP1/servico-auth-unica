@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from api.handlers.oauth_handler import oauth_router
 from api.handlers.user_handler import user_router
+from api.handlers.ms_handler import ms_router
 
 from core.infrastructure.database_manager import db_manager
 
@@ -50,3 +51,4 @@ app.add_middleware(
 # Register routers
 app.include_router(router=oauth_router, tags=["OAuth"])
 app.include_router(router=user_router, tags=["Users"])
+app.include_router(router=ms_router)

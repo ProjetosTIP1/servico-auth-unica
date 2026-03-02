@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(100) NOT NULL UNIQUE,
     `email` VARCHAR(255) NULL,
+    `ms_oid` VARCHAR(255) NULL UNIQUE,
     `full_name` VARCHAR(255) NULL,
     `first_name` VARCHAR(255) NULL,
     `last_name` VARCHAR(255) NULL,
