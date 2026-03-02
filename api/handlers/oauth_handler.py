@@ -100,7 +100,6 @@ async def logout(
     response: Response,
     authenticated_user: AuthenticatedUser,
     service: TokenServiceDeps,
-    token_request: TokenRequestModel,
     access_token: Annotated[str | None, Depends(get_token_from_request)] = None,
     refresh_token: Annotated[
         str | None, Depends(get_refresh_token_from_request)
@@ -109,15 +108,18 @@ async def logout(
     """Log out the current user by invalidating their authentication token."""
     try:
         # Priority: Cookies > Request Body
-        final_access_token = access_token or token_request.access_token
-        final_refresh_token = refresh_token or token_request.refresh_token
+        final_access_token = access_token
+        final_refresh_token = refresh_token
 
         if not final_access_token or not final_refresh_token:
             raise HTTPException(status_code=401, detail="Tokens missing")
 
         # Update token_request with found tokens for service call
-        token_request.access_token = final_access_token
-        token_request.refresh_token = final_refresh_token
+        token_request = TokenRequestModel(
+            user_id=authenticated_user.id,
+            access_token=final_access_token,
+            refresh_token=final_refresh_token
+        )
 
         await service.logout(authenticated_user.id, token_request)
 
