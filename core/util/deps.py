@@ -94,17 +94,12 @@ def get_database_manager(request: Request) -> DatabaseManager:
     return db_manager
 
 
-def get_microsoft_login_service(
-    ms_auth: IMicrosoftAuthService = Depends(_get_ms_auth_adapter),
-) -> MicrosoftLoginService:
-    """Provide a fully wired `MicrosoftLoginService` to the route handler."""
-    return MicrosoftLoginService(ms_auth=ms_auth)
-
-
 def get_token_repository(
     db_manager: DatabaseManager = Depends(get_database_manager),
 ) -> TokenRepository:
     """Provide a new instance of the TokenRepository."""
+    if db_manager.mariadb is None:
+        raise HTTPException(status_code=500, detail="MariaDB connection not initialized")
     return TokenRepository(db=db_manager.mariadb)
 
 
@@ -112,6 +107,8 @@ def get_user_repository(
     db_manager: DatabaseManager = Depends(get_database_manager),
 ) -> IUserRepository:
     """Provide a new instance of the UserRepository."""
+    if db_manager.mariadb is None:
+        raise HTTPException(status_code=500, detail="MariaDB connection not initialized")
     return UserRepository(db=db_manager.mariadb)
 
 
@@ -130,6 +127,17 @@ def get_user_service(
 ) -> UserServiceImpl:
     """Provide a fully wired `UserService` to the route handler."""
     return UserServiceImpl(user_repository=user_repository)
+
+
+def get_microsoft_login_service(
+    ms_auth: IMicrosoftAuthService = Depends(_get_ms_auth_adapter),
+    user_repo: IUserRepository = Depends(get_user_repository),
+    token_service: TokenServiceImpl = Depends(get_token_service),
+) -> MicrosoftLoginService:
+    """Provide a fully wired `MicrosoftLoginService` to the route handler."""
+    return MicrosoftLoginService(
+        ms_auth=ms_auth, user_repo=user_repo, token_service=token_service
+    )
 
 
 async def get_current_user(
