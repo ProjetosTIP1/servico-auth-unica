@@ -38,7 +38,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
 
     # ── Cookie Settings ────────────────────────────────────────────────────────
-    COOKIE_ACCESS_TOKEN_NAME: str = os.getenv("COOKIE_ACCESS_TOKEN_NAME", "access_token")
+    COOKIE_ACCESS_TOKEN_NAME: str = os.getenv(
+        "COOKIE_ACCESS_TOKEN_NAME", "access_token"
+    )
     COOKIE_REFRESH_TOKEN_NAME: str = os.getenv(
         "COOKIE_REFRESH_TOKEN_NAME", "refresh_token"
     )

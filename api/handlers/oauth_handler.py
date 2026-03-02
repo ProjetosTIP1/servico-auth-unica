@@ -118,7 +118,7 @@ async def logout(
         token_request = TokenRequestModel(
             user_id=authenticated_user.id,
             access_token=final_access_token,
-            refresh_token=final_refresh_token
+            refresh_token=final_refresh_token,
         )
 
         await service.logout(authenticated_user.id, token_request)

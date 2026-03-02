@@ -5,12 +5,14 @@ This module provides centralized management of database connections following
 Clean Architecture principles. The DatabaseManager acts as an infrastructure
 component that handles the lifecycle of all database connections.
 """
+
 from typing import Any
 
 from dataclasses import dataclass
 
 from core.ports.infrastructure import IDatabase
 from core.infrastructure.mariadb_adapter import MariaDbAdapter
+
 # from core.infrastructure.sqls_adapter import SqlServerAdapter
 from core.config.settings import settings
 from core.helpers.logger_helper import logger
