@@ -24,6 +24,10 @@ async def lifespan(app: FastAPI):
         logger.info("Database connection established.")
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
+    except KeyboardInterrupt:
+        await db_manager.shutdown()
+        logger.info("Shutdown signal received. Database connection closed.")
+        
     yield
     # Shutdown
     await db_manager.shutdown()
@@ -41,7 +45,7 @@ app.middleware(middleware_type="http")(correlation_id_middleware)
 
 # Register CORS middleware
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # ty:ignore[invalid-argument-type]
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
