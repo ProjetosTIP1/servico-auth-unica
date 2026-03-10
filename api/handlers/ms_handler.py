@@ -22,7 +22,7 @@ from core.services.microsoft_login_service import (
 from core.util.deps import get_microsoft_login_service, require_microsoft_user
 from core.config.settings import settings
 
-ms_router = APIRouter(prefix="/auth/microsoft", tags=["Authentication"])
+ms_router = APIRouter(prefix="/o/microsoft", tags=["Authentication"])
 
 
 # ── Request / Response schemas ─────────────────────────────────────────────────
@@ -65,7 +65,7 @@ async def validate_microsoft_token(
     service: MicrosoftLoginService = Depends(dependency=get_microsoft_login_service),
 ) -> MicrosoftLoginResponse:
     """
-    POST /auth/microsoft/validate
+    POST /o/microsoft/validate
     """
     result: MicrosoftLoginResult = await service.execute(token=body.token)
 
@@ -108,12 +108,12 @@ async def get_microsoft_login_url(
     service: MicrosoftLoginService = Depends(dependency=get_microsoft_login_service),
 ) -> str:
     """
-    GET /auth/login-url
+    GET /o/microsoft/login-url
 
     Returns the URL that the frontend should redirect the user to for Microsoft login.
     """
     return await service.get_auth_url(
-        redirect_uri="https://localhost:8000/auth/callback", scopes=["User.Read"]
+        redirect_uri="https://localhost:8000/o/microsoft/callback", scopes=["User.Read"]
     )
 
 
@@ -133,7 +133,7 @@ async def handle_microsoft_callback(
     service: MicrosoftLoginService = Depends(dependency=get_microsoft_login_service),
 ) -> MicrosoftLoginResponse:
     """
-    POST /auth/callback
+    POST /o/microsoft/callback
 
     Handles the callback from Microsoft login. This endpoint is called by the frontend
     after the user has authenticated with Microsoft.
@@ -160,7 +160,7 @@ async def get_current_user(
     user: MicrosoftUserIdentity = Depends(dependency=require_microsoft_user),
 ) -> MicrosoftUserIdentity:
     """
-    GET /auth/me
+    GET /o/microsoft/me
 
     Example of a route protected by `require_microsoft_user`.
     Any other endpoint in the app can use the same dependency:

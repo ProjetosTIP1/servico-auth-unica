@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     except KeyboardInterrupt:
         await db_manager.shutdown()
         logger.info("Shutdown signal received. Database connection closed.")
-        
+
     yield
     # Shutdown
     await db_manager.shutdown()
