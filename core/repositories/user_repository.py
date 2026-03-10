@@ -74,6 +74,19 @@ class UserRepository(IUserRepository):
             return None
         except Exception as e:
             raise Exception(f"Error fetching user by MS OID: {e}")
+    
+    async def search_users_by_name(self, name_query: str) -> List[UserType]:
+        """Search users by name (partial match)"""
+        try:
+            query = """
+            SELECT id, username, email, ms_oid, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
+            FROM users 
+            WHERE (full_name LIKE :name_query OR first_name LIKE :name_query OR last_name LIKE :name_query) AND is_active = 1
+            """
+            results = await self.db.execute_with_params(query, {"name_query": f"%{name_query}%"})
+            return [UserType(**data) for data in results]
+        except Exception as e:
+            raise Exception(f"Error searching users by name: {e}")
 
     async def get_user_hashed_password(self, username: str) -> str | None:
         """Get the hashed password for a user by username"""
