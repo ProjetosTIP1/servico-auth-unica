@@ -10,6 +10,7 @@ No business logic lives here. Following the Single Responsibility Principle
 (SRP), business decisions stay in the Application layer (services).
 """
 
+from fastapi import HTTPException
 from typing import Optional
 from fastapi import APIRouter, Depends, status, Response
 from pydantic import BaseModel
@@ -67,7 +68,11 @@ async def validate_microsoft_token(
     """
     POST /o/microsoft/validate
     """
-    result: MicrosoftLoginResult = await service.execute(token=body.token)
+    
+    try:
+        result: MicrosoftLoginResult = await service.execute(token=body.token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Token validation failed: {e}")
 
     # Set cookies
     response.set_cookie(

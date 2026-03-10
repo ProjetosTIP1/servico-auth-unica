@@ -71,16 +71,31 @@ class MicrosoftAuthAdapter(IMicrosoftAuthService):
         """
         jwks = await self._get_jwks()
 
+        # Key lookup happens BEFORE the try so MicrosoftAuthError isn't swallowed.
+        header = jwt.get_unverified_header(token)
+        kid = header.get("kid")
+        if not kid:
+            raise MicrosoftAuthError("Token header is missing 'kid' field.")
+
+        signing_key = next(
+            (k for k in jwks.get("keys", []) if k.get("kid") == kid), None
+        )
+        if signing_key is None:
+            # Could mean stale JWKS cache after key rotation — consider forcing
+            # a re-fetch here before giving up.
+            raise MicrosoftAuthError(f"No matching signing key found for kid='{kid}'.")
+
+        logger.debug(
+            f"Validating token: alg={header.get('alg')}, kid={kid}, "
+            f"aud claim (unverified)={jwt.get_unverified_claims(token).get('aud')}"
+        )
+
         try:
-            # python-jose resolves the correct key from the JWKS automatically
-            # using the `kid` header in the token.
             payload = jwt.decode(
                 token,
-                jwks,
+                key=signing_key,
                 algorithms=["RS256"],
-                # audience = your Azure app's client ID (or "api://<client_id>")
                 audience=settings.AZURE_CLIENT_ID,
-                # Allow tokens from your tenant OR multi-tenant ("common")
                 options={"verify_aud": bool(settings.AZURE_CLIENT_ID)},
             )
         except ExpiredSignatureError:
@@ -89,6 +104,8 @@ class MicrosoftAuthAdapter(IMicrosoftAuthService):
             raise MicrosoftAuthError(f"Token claims are invalid: {exc}")
         except JWTError as exc:
             raise MicrosoftAuthError(f"Token signature verification failed: {exc}")
+        except Exception as exc:
+            raise MicrosoftAuthError(f"Unexpected error during token decoding: {exc}") from exc
 
         return self._map_claims_to_identity(payload)
 

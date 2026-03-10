@@ -58,9 +58,16 @@ class MicrosoftLoginService:
         """
         Validate the bearer token, sync the user, and issue session tokens.
         """
-        # Step 1 — validate Microsoft token
-        identity = await self._ms_auth.validate_token(token)
+        identity: MicrosoftUserIdentity | None = None
+        try:
+            identity = await self._ms_auth.validate_token(token)
+        except Exception as e:
+            logger.error(f"Microsoft token validation failed: {e}")
+            raise
 
+        if identity is None:
+            raise RuntimeError("Microsoft token validation did not return an identity.")
+        
         logger.info(
             message=f"Microsoft token validated for user oid={identity.oid} email={identity.email}"
         )
