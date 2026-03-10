@@ -70,7 +70,7 @@ class MicrosoftLoginService:
         
         # Step 1 — Validate the Microsoft token and extract the user identity
         try:
-            identity = await self._ms_auth.validate_token(token)
+            identity: MicrosoftUserIdentity | None = await self._ms_auth.validate_token(token)
         except Exception as e:
             logger.error(f"Microsoft token validation failed: {e}")
             raise
@@ -92,10 +92,14 @@ class MicrosoftLoginService:
 
         # Step 3 — Issue our own tokens
         # We need a refresh token and an access token
-        refresh_token = await self._token_service.create_refresh_token(user, "")
-        access_token = await self._token_service.create_access_token(
-            user, refresh_token
-        )
+        try:
+            refresh_token: str = await self._token_service.create_refresh_token(user, "")
+            access_token: str = await self._token_service.create_access_token(
+                user, refresh_token
+            )
+        except Exception as e:
+            logger.error(f"Token issuance failed: {e}")
+            raise RuntimeError("Failed to issue session tokens after Microsoft login.")
 
         tokens = TokenResponseModel(
             access_token=access_token,
