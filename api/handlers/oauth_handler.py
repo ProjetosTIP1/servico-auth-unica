@@ -11,7 +11,6 @@ from core.util.deps import (
 
 from core.models.user_models import UserType
 from core.models.oauth_models import (
-    TokenResponseModel,
     ResponseModel,
     TokenRequestModel,
 )
@@ -43,7 +42,7 @@ async def get_current_user(
     return authenticated_user
 
 
-@oauth_router.post("/refresh", response_model=TokenResponseModel)
+@oauth_router.post("/refresh", response_model=ResponseModel)
 async def refresh_token(
     response: Response,
     service: TokenServiceDeps,
@@ -52,12 +51,11 @@ async def refresh_token(
     refresh_token: Annotated[
         str | None, Depends(get_refresh_token_from_request)
     ] = None,
-) -> TokenResponseModel:
+) -> ResponseModel:
     """Refresh the authentication token for the current user."""
     try:
-        # Priority: Cookies > Request Body
-        final_access_token = access_token or token_request.access_token
-        final_refresh_token = refresh_token or token_request.refresh_token
+        final_access_token = access_token
+        final_refresh_token = refresh_token
 
         if not final_access_token or not final_refresh_token:
             raise HTTPException(status_code=401, detail="Tokens missing")
@@ -74,17 +72,19 @@ async def refresh_token(
             value=tokens.access_token,
             httponly=settings.COOKIE_HTTPONLY,
             secure=settings.COOKIE_SECURE,
-            samesite=settings.COOKIE_SAMESITE,
+            samesite=settings.COOKIE_SAMESITE,  # ty:ignore[invalid-argument-type]
         )
         response.set_cookie(
             key=settings.COOKIE_REFRESH_TOKEN_NAME,
             value=tokens.refresh_token,
             httponly=settings.COOKIE_HTTPONLY,
             secure=settings.COOKIE_SECURE,
-            samesite=settings.COOKIE_SAMESITE,
+            samesite=settings.COOKIE_SAMESITE,  # ty:ignore[invalid-argument-type]
         )
 
-        return tokens
+        return ResponseModel(
+            code=200, status="success", message="Token refreshed successfully"
+        )
     except SecurityBreachException as e:
         raise HTTPException(status_code=403, detail=str(e))
     except TokenRevokedException as e:
@@ -134,15 +134,13 @@ async def logout(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@oauth_router.post(
-    "/token/", response_model=TokenResponseModel, include_in_schema=False
-)
-@oauth_router.post("/token", response_model=TokenResponseModel)
+@oauth_router.post("/token/", response_model=ResponseModel, include_in_schema=False)
+@oauth_router.post("/token", response_model=ResponseModel)
 async def login(
     response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     service: TokenServiceDeps,
-) -> TokenResponseModel:
+) -> ResponseModel:
     """
     Authenticate a user and return an authentication token.
     This endpoint is PUBLIC — no authentication required.
@@ -156,17 +154,19 @@ async def login(
             value=tokens.access_token,
             httponly=settings.COOKIE_HTTPONLY,
             secure=settings.COOKIE_SECURE,
-            samesite=settings.COOKIE_SAMESITE,
+            samesite=settings.COOKIE_SAMESITE,  # ty:ignore[invalid-argument-type]
         )
         response.set_cookie(
             key=settings.COOKIE_REFRESH_TOKEN_NAME,
             value=tokens.refresh_token,
             httponly=settings.COOKIE_HTTPONLY,
             secure=settings.COOKIE_SECURE,
-            samesite=settings.COOKIE_SAMESITE,
+            samesite=settings.COOKIE_SAMESITE,  # ty:ignore[invalid-argument-type]
         )
 
-        return tokens
+        return ResponseModel(
+            code=200, status="success", message="Logged in successfully"
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
