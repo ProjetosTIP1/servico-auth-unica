@@ -11,6 +11,7 @@ Architecture notes:
 - Both dependencies are injected — this makes the class trivially testable:
   pass mock implementations in tests, real adapters in production.
 """
+
 from typing import Tuple
 
 import secrets
@@ -19,7 +20,12 @@ from datetime import datetime, timedelta, timezone
 
 from core.config.settings import settings
 
-from core.models.user_models import MicrosoftUserIdentity, UserType, UserCreateType, UserUpdateType
+from core.models.user_models import (
+    MicrosoftUserIdentity,
+    UserType,
+    UserCreateType,
+    UserUpdateType,
+)
 from core.models.oauth_models import TokenResponseModel
 
 from core.ports.service import IMicrosoftAuthService, ITokenService
@@ -67,33 +73,38 @@ class MicrosoftLoginService:
         identity: MicrosoftUserIdentity | None = None
         user: UserType | None = None
         is_new_user = False
-        
+
         # Step 1 — Validate the Microsoft token and extract the user identity
         try:
-            identity: MicrosoftUserIdentity | None = await self._ms_auth.validate_token(token)
+            identity: MicrosoftUserIdentity | None = await self._ms_auth.validate_token(
+                token
+            )
         except Exception as e:
             logger.error(f"Microsoft token validation failed: {e}")
             raise
 
         if identity is None:
             raise RuntimeError("Microsoft token validation did not return an identity.")
-        
+
         logger.info(
             message=f"Microsoft token validated for user oid={identity.oid} email={identity.email}"
         )
 
-        
         # Step 2 — Check if the user exists in our system, or create/link as needed
         try:
             user, is_new_user = await self._check_user_sync(identity)
         except Exception as e:
             logger.error(f"User synchronization failed: {e}")
-            raise RuntimeError("User synchronization failed after Microsoft token validation.")
+            raise RuntimeError(
+                "User synchronization failed after Microsoft token validation."
+            )
 
         # Step 3 — Issue our own tokens
         # We need a refresh token and an access token
         try:
-            refresh_token: str = await self._token_service.create_refresh_token(user, "")
+            refresh_token: str = await self._token_service.create_refresh_token(
+                user, ""
+            )
             access_token: str = await self._token_service.create_access_token(
                 user, refresh_token
             )
@@ -111,16 +122,22 @@ class MicrosoftLoginService:
         return MicrosoftLoginResult(
             tokens=tokens, user=user, identity=identity, is_new_user=is_new_user
         )
-        
-    async def _check_user_sync(self, identity: MicrosoftUserIdentity) -> Tuple[UserType, bool]:
+
+    async def _check_user_sync(
+        self, identity: MicrosoftUserIdentity
+    ) -> Tuple[UserType, bool]:
         """
         Check if a user with the given Microsoft OID exists. If not, check by email or name.
         If a user with the same email or name exists, link the MS OID. Otherwise, create a new user.
         """
         user: UserType | None = None
         is_new_user = False
-        
-        name: str = identity.name.split("|")[0] if identity.name else identity.preferred_username or identity.email.split("@")[0]
+
+        name: str = (
+            identity.name.split("|")[0]
+            if identity.name
+            else identity.preferred_username or identity.email.split("@")[0]
+        )
         try:
             user = await self._user_repo.get_user_by_ms_oid(identity.oid)
             if user:
@@ -134,7 +151,7 @@ class MicrosoftLoginService:
                     user.id, UserUpdateType(ms_oid=identity.oid)
                 )
                 return await self._user_repo.get_user_by_id(user.id), is_new_user
-            
+
             # No user with this email, check by name
             users = await self._user_repo.search_users_by_name(name)
             if users:
@@ -156,7 +173,9 @@ class MicrosoftLoginService:
             # Random password since they login via MS
             random_password = secrets.token_urlsafe(32)
             hashed_password = get_password_hash(random_password)
-            return await self._user_repo.create_user(new_user_data, hashed_password), True
+            return await self._user_repo.create_user(
+                new_user_data, hashed_password
+            ), True
         except Exception as e:
             logger.error(f"Database error during user sync: {e}")
             raise RuntimeError("Internal error during user synchronization.")

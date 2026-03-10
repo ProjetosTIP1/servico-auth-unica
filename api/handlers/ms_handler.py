@@ -3,12 +3,12 @@ from typing import Optional
 from fastapi import APIRouter, Depends, status, Response
 from pydantic import BaseModel
 
-from core.models.user_models import MicrosoftUserIdentity, UserType
+from core.models.user_models import UserType
 from core.services.microsoft_login_service import (
     MicrosoftLoginResult,
     MicrosoftLoginService,
 )
-from core.util.deps import get_microsoft_login_service, require_microsoft_user
+from core.util.deps import get_microsoft_login_service
 from core.config.settings import settings
 
 ms_router = APIRouter(prefix="/o/microsoft", tags=["Authentication"])
@@ -56,7 +56,7 @@ async def validate_microsoft_token(
     """
     POST /o/microsoft/validate
     """
-    
+
     try:
         result: MicrosoftLoginResult = await service.execute(token=body.token)
         # Set cookies

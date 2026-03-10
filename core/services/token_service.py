@@ -226,7 +226,9 @@ class TokenService(ITokenService):
                 raise TokenRevokedException("Invalid token")
 
             # Validate the user
-            user: UserType = await self.user_repository.get_user_by_id(auth_user_id)
+            user: UserType | None = await self.user_repository.get_user_by_id(
+                auth_user_id
+            )
             if not user:
                 raise UserNotFoundException()
 
@@ -251,14 +253,16 @@ class TokenService(ITokenService):
                 raise InvalidCredentialsException()
 
             # Validate the user and password
-            user: UserType = await self.user_repository.get_user_by_username(username)
+            user: UserType | None = await self.user_repository.get_user_by_username(
+                username
+            )
             if not user:
                 raise InvalidCredentialsException()
 
-            hashed_password = await self.user_repository.get_user_hashed_password(
-                username
-            )
-            if not verify_password(password, hashed_password):
+            hashed_password: (
+                str | None
+            ) = await self.user_repository.get_user_hashed_password(username)
+            if not hashed_password or not verify_password(password, hashed_password):
                 raise InvalidCredentialsException()
 
             # Create the refresh token

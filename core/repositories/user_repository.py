@@ -74,7 +74,7 @@ class UserRepository(IUserRepository):
             return None
         except Exception as e:
             raise Exception(f"Error fetching user by MS OID: {e}")
-    
+
     async def search_users_by_name(self, name_query: str) -> List[UserType]:
         """Search users by name (partial match)"""
         try:
@@ -83,7 +83,9 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE (full_name LIKE :name_query OR first_name LIKE :name_query OR last_name LIKE :name_query) AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"name_query": f"%{name_query}%"})
+            results = await self.db.execute_with_params(
+                query, {"name_query": f"%{name_query}%"}
+            )
             return [UserType(**data) for data in results]
         except Exception as e:
             raise Exception(f"Error searching users by name: {e}")
@@ -102,6 +104,21 @@ class UserRepository(IUserRepository):
             return None
         except Exception as e:
             raise Exception(f"Error fetching hashed password: {e}")
+
+    async def is_user_admin(self, cpf_cnpj: str) -> bool:
+        """Check if the user with the given CPF/CNPJ is an admin"""
+        try:
+            query = """
+            SELECT manager 
+            FROM users 
+            WHERE cpf_cnpj = :cpf_cnpj AND is_active = 1
+            """
+            results = await self.db.execute_with_params(query, {"cpf_cnpj": cpf_cnpj})
+            if results:
+                return results[0]["manager"] == 1
+            return False
+        except Exception as e:
+            raise Exception(f"Error checking if user is admin: {e}")
 
     async def create_user(
         self, user_data: UserCreateType, hashed_password: str

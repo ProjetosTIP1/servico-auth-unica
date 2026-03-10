@@ -57,7 +57,7 @@ async def update_user(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@user_router.patch("/{user_id}/password", response_model=UserType)
+@user_router.patch("/{user_id}/password", response_model=ResponseModel)
 async def update_user_password(
     authenticated_user: AuthenticatedUser,
     user_id: int,
@@ -65,8 +65,15 @@ async def update_user_password(
     user_service: UserServiceDeps,
 ):
     try:
-        user: UserType = await user_service.update_user_password(user_id, user_data)
-        return user
+        if not authenticated_user:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        await user_service.update_user_password(user_id, user_data)
+        return ResponseModel(
+            code=200,
+            message="User password updated successfully",
+            status="success",
+            data=None,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -99,6 +106,24 @@ async def delete_user(
         await user_service.delete_user(user_id)
         return ResponseModel(
             code=200, message="User deleted successfully", status="success", data=None
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@user_router.post("/is-admin", response_model=ResponseModel)
+async def is_admin(
+    cpf_cnpj: str,
+    service: UserServiceDeps,
+) -> ResponseModel:
+    """Check if the user with the given CPF/CNPJ is an admin."""
+    try:
+        is_admin: bool = await service.is_user_admin(cpf_cnpj)
+        return ResponseModel(
+            code=200,
+            status="success",
+            message="User is admin" if is_admin else "User is not admin",
+            data={"is_admin": is_admin},
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

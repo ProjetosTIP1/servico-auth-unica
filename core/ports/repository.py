@@ -64,7 +64,7 @@ class IUserRepository(ABC):
     async def get_user_by_ms_oid(self, ms_oid: str) -> UserType | None:
         """Get user by Microsoft object ID"""
         pass
-    
+
     @abstractmethod
     async def search_users_by_name(self, name_query: str) -> List[UserType]:
         """Search users by name (partial match)"""
@@ -73,6 +73,11 @@ class IUserRepository(ABC):
     @abstractmethod
     async def get_user_hashed_password(self, username: str) -> str | None:
         """Get the hashed password for a user by username"""
+        pass
+
+    @abstractmethod
+    async def is_user_admin(self, cpf_cnpj: str) -> bool:
+        """Check if the user with the given CPF/CNPJ is an admin"""
         pass
 
     @abstractmethod

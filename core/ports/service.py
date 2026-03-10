@@ -94,12 +94,17 @@ class IUserService(ABC):
         pass
 
     @abstractmethod
-    async def update_user_password(self, user_id: int, data: Any) -> Any:
+    async def update_user_password(self, user_id: int, passwords_data: Any) -> Any:
         """Update the password of an existing user"""
         pass
 
     @abstractmethod
-    async def reset_user_password(self, user_id: int, new_password: str) -> None:
+    async def is_user_admin(self, cpf_cnpj: str) -> bool:
+        """Check if the user with the given CPF/CNPJ is an admin"""
+        pass
+
+    @abstractmethod
+    async def reset_user_password(self, user_email: str, new_password: str) -> None:
         """Reset the password of an existing user"""
         pass
 

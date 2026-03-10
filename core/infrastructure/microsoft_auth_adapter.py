@@ -105,7 +105,9 @@ class MicrosoftAuthAdapter(IMicrosoftAuthService):
         except JWTError as exc:
             raise MicrosoftAuthError(f"Token signature verification failed: {exc}")
         except Exception as exc:
-            raise MicrosoftAuthError(f"Unexpected error during token decoding: {exc}") from exc
+            raise MicrosoftAuthError(
+                f"Unexpected error during token decoding: {exc}"
+            ) from exc
 
         return self._map_claims_to_identity(payload)
 
