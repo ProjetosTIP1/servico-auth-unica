@@ -134,7 +134,6 @@ async def logout(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@oauth_router.post("/token/", response_model=ResponseModel, include_in_schema=False)
 @oauth_router.post("/token", response_model=ResponseModel)
 async def login(
     response: Response,
