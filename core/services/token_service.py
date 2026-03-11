@@ -75,7 +75,7 @@ class TokenService(ITokenService):
         try:
             # Create the access token using the helper function
             access_token: str = create_jwt_token(
-                data={"sub": user.username},
+                data={"sub": user.cpf_cnpj},
                 expires_delta=self._get_time_to_expire(TokenType.ACCESS),
                 token_type="access",
             )
@@ -104,7 +104,7 @@ class TokenService(ITokenService):
     async def create_refresh_token(self, user: UserType, parent_token: str) -> str:
         try:
             refresh_token_str = create_jwt_token(
-                data={"sub": str(user.username)},
+                data={"sub": str(user.cpf_cnpj)},
                 expires_delta=self._get_time_to_expire(TokenType.REFRESH),
                 token_type="refresh",
             )
@@ -130,8 +130,15 @@ class TokenService(ITokenService):
 
     async def create_token_pair(self, token: TokenRequestModel) -> TokenResponseModel:
         try:
+            refresh_token: str | None = token.refresh_token
+            access_token: str | None = token.access_token
+            
+            # Safe check for required tokens
+            if not refresh_token or not access_token:
+                raise InvalidCredentialsException("Refresh token and access token are required")
+            
             # Validate the token
-            if not await self._validate_refresh_token(token.refresh_token):
+            if not await self._validate_refresh_token(refresh_token):
                 raise TokenRevokedException("Invalid or revoked refresh token")
 
             user = await self.user_repository.get_user_by_id(token.user_id)
@@ -140,13 +147,13 @@ class TokenService(ITokenService):
 
             # Create the token pair
             refresh_token: str = await self.create_refresh_token(
-                user, token.refresh_token
+                user, refresh_token
             )
             access_token: str = await self.create_access_token(user, refresh_token)
 
             # Revoke the old refresh token
-            await self.token_repository.revoke_token(token.access_token)
-            await self.token_repository.revoke_token(token.refresh_token)
+            await self.token_repository.revoke_token(access_token)
+            await self.token_repository.revoke_token(refresh_token)
 
             # Return the token pair
             return TokenResponseModel(
@@ -246,22 +253,22 @@ class TokenService(ITokenService):
             )
             raise e
 
-    async def login(self, username: str, password: str) -> TokenResponseModel:
+    async def login(self, cpfcnpj: str, password: str) -> TokenResponseModel:
         try:
             # Validate the credentials
-            if not username or not password:
+            if not cpfcnpj or not password:
                 raise InvalidCredentialsException()
 
             # Validate the user and password
-            user: UserType | None = await self.user_repository.get_user_by_username(
-                username
+            user: UserType | None = await self.user_repository.get_user_by_cpfcnpj(
+                cpfcnpj
             )
             if not user:
                 raise InvalidCredentialsException()
 
             hashed_password: (
                 str | None
-            ) = await self.user_repository.get_user_hashed_password(username)
+            ) = await self.user_repository.get_user_hashed_password(user.email)
             if not hashed_password or not verify_password(password, hashed_password):
                 raise InvalidCredentialsException()
 

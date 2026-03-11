@@ -182,8 +182,8 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    username = payload.get("sub")
-    if username is None:
+    cpf_cnpj = payload.get("sub")
+    if cpf_cnpj is None:
         raise credentials_exception
 
     # ── 2. DB-level revocation check ──────────────────────────────────────────
@@ -204,7 +204,7 @@ async def get_current_user(
 
     # ── 3. Identity & active-status check ────────────────────────────────────
     try:
-        user: UserType = await user_repo.get_user_by_username(username)
+        user: UserType = await user_repo.get_user_by_cpfcnpj(cpf_cnpj)
         if user is None:
             raise credentials_exception
 
