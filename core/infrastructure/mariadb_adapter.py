@@ -28,6 +28,7 @@ class MariaDbAdapter(IDatabase):
         self._validate_connection_string(connection_string)
         self.connection_string = connection_string
         self._engine: Engine | None = None
+        self._connection: Connection | None = None
 
     def _ensure_engine(self) -> Engine:
         """Ensures the engine is initialized once."""
@@ -43,7 +44,7 @@ class MariaDbAdapter(IDatabase):
         return self._engine
 
     @property
-    def connection(self) -> Connection:
+    def connection(self) -> Connection | None:
         """
         Lazy connection initialization with automatic reconnection.
 
@@ -99,7 +100,8 @@ class MariaDbAdapter(IDatabase):
 
         def _close():
             try:
-                self._connection.close()
+                if self._connection:
+                    self._connection.close()
                 if self._engine:
                     self._engine.dispose()
             except Exception as e:
