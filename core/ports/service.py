@@ -50,7 +50,7 @@ class ITokenService(ABC):
         pass
 
     @abstractmethod
-    async def login(self, username: str, password: str) -> TokenResponseModel:
+    async def login(self, cpfcnpj: str, password: str) -> TokenResponseModel:
         """Authenticate a user and return an authentication token pair."""
         pass
 
@@ -64,8 +64,8 @@ class IUserService(ABC):
     """Abstract interface for user service operations"""
 
     @abstractmethod
-    async def get_user_by_username(self, username: str) -> Any:
-        """Get user by username"""
+    async def get_user_by_cpfcnpj(self, cpf_cnpj: str) -> Any:
+        """Get user by CPF/CNPJ"""
         pass
 
     @abstractmethod

@@ -46,8 +46,8 @@ class IUserRepository(ABC):
     """Abstract interface for user repository operations"""
 
     @abstractmethod
-    async def get_user_by_username(self, username: str) -> UserType | None:
-        """Get user by username"""
+    async def get_user_by_cpfcnpj(self, cpfcnpj: str) -> UserType | None:
+        """Get user by CPF/CNPJ"""
         pass
 
     @abstractmethod
@@ -71,8 +71,8 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_user_hashed_password(self, username: str) -> str | None:
-        """Get the hashed password for a user by username"""
+    async def get_user_hashed_password(self, email: str) -> str | None:
+        """Get the hashed password for a user by email"""
         pass
 
     @abstractmethod

@@ -11,21 +11,21 @@ class UserRepository(IUserRepository):
     def __init__(self, db: IDatabase):
         self.db = db
 
-    async def get_user_by_username(self, username: str) -> UserType | None:
-        """Get user by username"""
+    async def get_user_by_cpfcnpj(self, cpf_cnpj: str) -> UserType | None:
+        """Get user by CPF/CNPJ"""
         try:
             query = """
             SELECT id, username, email, ms_oid, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, created_at, updated_at 
             FROM users 
-            WHERE username = :username AND is_active = 1
+            WHERE cpf_cnpj = :cpf_cnpj AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"username": username})
+            results = await self.db.execute_with_params(query, {"cpf_cnpj": cpf_cnpj})
             if results:
                 user_data = results[0]
                 return UserType(**user_data)
             return None
         except Exception as e:
-            raise Exception(f"Error fetching user by username: {e}")
+            raise Exception(f"Error fetching user by CPF/CNPJ: {e}")
 
     async def get_user_by_id(self, user_id: int) -> UserType | None:
         """Get user by ID"""
@@ -90,15 +90,15 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error searching users by name: {e}")
 
-    async def get_user_hashed_password(self, username: str) -> str | None:
-        """Get the hashed password for a user by username"""
+    async def get_user_hashed_password(self, email: str) -> str | None:
+        """Get the hashed password for a user by email"""
         try:
             query = """
             SELECT hashed_password 
             FROM users 
-            WHERE username = :username AND is_active = 1
+            WHERE email = :email AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"username": username})
+            results = await self.db.execute_with_params(query, {"email": email})
             if results:
                 return results[0]["hashed_password"]
             return None
