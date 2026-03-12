@@ -7,8 +7,8 @@ Everything above (route handlers, use-case services) stays decoupled from
 implementation details because dependencies are injected here.
 """
 
-from core.ports.service import ITokenService
-from core.ports.repository import IUserRepository, ITokenRepository
+from core.ports.service import ITokenService, IIntegrationService
+from core.ports.repository import IUserRepository, ITokenRepository, ISgaRepository, ISamIntegrationRepository
 from core.helpers.authentication_helper import validate_token
 from typing import Annotated
 from functools import lru_cache
@@ -22,6 +22,7 @@ from core.infrastructure.microsoft_auth_adapter import (
     MicrosoftAuthAdapter,
     MicrosoftAuthError,
 )
+from core.infrastructure.integration_adapters import SgaPolarsAdapter, SamIntegrationAdapter
 
 from core.repositories.user_repository import UserRepository
 from core.repositories.token_repository import TokenRepository
@@ -31,6 +32,7 @@ from core.ports.service import IMicrosoftAuthService
 from core.services.microsoft_login_service import MicrosoftLoginService
 from core.services.token_service import TokenService as TokenServiceImpl
 from core.services.user_service import UserService as UserServiceImpl
+from core.services.integration_service import IntegrationService
 
 # ── Bearer token extractor ─────────────────────────────────────────────────────
 # auto_error=False lets us return a custom 401 instead of FastAPI's default.
@@ -142,6 +144,26 @@ def get_microsoft_login_service(
     return MicrosoftLoginService(
         ms_auth=ms_auth, user_repo=user_repo, token_service=token_service
     )
+
+
+@lru_cache(maxsize=1)
+def get_sga_repository() -> ISgaRepository:
+    """Provide a singleton instance of the SGA Repository."""
+    return SgaPolarsAdapter()
+
+
+@lru_cache(maxsize=1)
+def get_sam_integration_repository() -> ISamIntegrationRepository:
+    """Provide a singleton instance of the SAM Integration Repository."""
+    return SamIntegrationAdapter()
+
+
+def get_integration_service(
+    sga_repo: ISgaRepository = Depends(get_sga_repository),
+    sam_repo: ISamIntegrationRepository = Depends(get_sam_integration_repository),
+) -> IIntegrationService:
+    """Provide a fully wired `IntegrationService` to the route handler."""
+    return IntegrationService(sga_repo=sga_repo, sam_repo=sam_repo)
 
 
 async def get_current_user(
