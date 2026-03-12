@@ -8,7 +8,12 @@ implementation details because dependencies are injected here.
 """
 
 from core.ports.service import ITokenService, IIntegrationService
-from core.ports.repository import IUserRepository, ITokenRepository, ISgaRepository, ISamIntegrationRepository
+from core.ports.repository import (
+    IUserRepository,
+    ITokenRepository,
+    ISgaRepository,
+    ISamIntegrationRepository,
+)
 from core.helpers.authentication_helper import validate_token
 from typing import Annotated
 from functools import lru_cache
@@ -22,7 +27,10 @@ from core.infrastructure.microsoft_auth_adapter import (
     MicrosoftAuthAdapter,
     MicrosoftAuthError,
 )
-from core.infrastructure.integration_adapters import SgaPolarsAdapter, SamIntegrationAdapter
+from core.infrastructure.integration_adapters import (
+    SgaPolarsAdapter,
+    SamIntegrationAdapter,
+)
 
 from core.repositories.user_repository import UserRepository
 from core.repositories.token_repository import TokenRepository

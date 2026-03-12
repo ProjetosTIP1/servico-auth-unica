@@ -165,9 +165,9 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
     def upsert_departments(self, df: pl.DataFrame) -> int:
         if df.is_empty():
             return 0
-        
+
         # Batch upsert using SQL construction for "ON DUPLICATE KEY UPDATE"
-        # Or just insert ignore if that's the requirement. 
+        # Or just insert ignore if that's the requirement.
         # For simplicity and performance, we'll use a transaction.
         count = 0
         with self._engine.begin() as conn:
@@ -192,11 +192,14 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
                     VALUES (:code, :name, :branche)
                     ON DUPLICATE KEY UPDATE name = VALUES(name), branche = VALUES(branche)
                 """)
-                conn.execute(stmt, {
-                    "code": row["Codigo"], 
-                    "name": row["Nome"], 
-                    "branche": row["Filial"]
-                })
+                conn.execute(
+                    stmt,
+                    {
+                        "code": row["Codigo"],
+                        "name": row["Nome"],
+                        "branche": row["Filial"],
+                    },
+                )
                 count += 1
         return count
 
@@ -219,16 +222,19 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
                         is_active = VALUES(is_active),
                         updated_at = NOW()
                 """)
-                conn.execute(stmt, {
-                    "username": row["username"],
-                    "full_name": row["nome_completo"],
-                    "email": row.get("email"),
-                    "unit": row.get("UNIDADE"),
-                    "job": row.get("cargo"),
-                    "branche": row.get("Departamento"),
-                    "is_active": row.get("is_active", 1),
-                    "hashed_password": row.get("password", "NOT_SET")
-                })
+                conn.execute(
+                    stmt,
+                    {
+                        "username": row["username"],
+                        "full_name": row["nome_completo"],
+                        "email": row.get("email"),
+                        "unit": row.get("UNIDADE"),
+                        "job": row.get("cargo"),
+                        "branche": row.get("Departamento"),
+                        "is_active": row.get("is_active", 1),
+                        "hashed_password": row.get("password", "NOT_SET"),
+                    },
+                )
                 count += 1
         return count
 
@@ -236,6 +242,8 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         if not usernames:
             return 0
         with self._engine.begin() as conn:
-            stmt = text("UPDATE users SET is_active = 0, updated_at = NOW() WHERE username IN :usernames")
+            stmt = text(
+                "UPDATE users SET is_active = 0, updated_at = NOW() WHERE username IN :usernames"
+            )
             result = conn.execute(stmt, {"usernames": tuple(usernames)})
             return result.rowcount

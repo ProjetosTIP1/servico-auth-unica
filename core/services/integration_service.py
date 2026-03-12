@@ -22,11 +22,11 @@ class IntegrationService(IIntegrationService):
 
     async def sync_users(self, dry_run: bool = False):
         logger.info("Starting user synchronization...")
-        
+
         # 1. Extraction (E)
         sga_users_df = self.sga_repo.get_users_df()
         sam_users_df = self.sam_repo.get_current_users_df()
-        
+
         # 2. Transformation (T)
         if not sga_users_df.is_empty():
             # Clean usernames: remove . / - and spaces, then deduplicate
@@ -40,18 +40,18 @@ class IntegrationService(IIntegrationService):
             # Join to find new users vs updates
             # New users: in SGA but NOT in SAM
             new_users_df = sga_users_df.join(sam_users_df, on="username", how="anti")
-            
+
             # Updates: in both SGA and SAM, but with differences
             common_users_df = sga_users_df.join(
                 sam_users_df, on="username", how="inner", suffix="_sam"
             )
-            
+
             # Filter changed users: compare relevant fields
             changed_users_df = common_users_df.filter(
-                (pl.col("nome_completo") != pl.col("nome_completo_sam")) |
-                (pl.col("cargo") != pl.col("cargo_sam")) |
-                (pl.col("Departamento") != pl.col("Departamento_sam")) |
-                (pl.col("UNIDADE") != pl.col("UNIDADE_sam"))
+                (pl.col("nome_completo") != pl.col("nome_completo_sam"))
+                | (pl.col("cargo") != pl.col("cargo_sam"))
+                | (pl.col("Departamento") != pl.col("Departamento_sam"))
+                | (pl.col("UNIDADE") != pl.col("UNIDADE_sam"))
             )
 
             # Process new users: generate password
@@ -61,29 +61,37 @@ class IntegrationService(IIntegrationService):
                 new_users_df = new_users_df.with_columns(
                     pl.col("username")
                     .str.slice(0, 6)
-                    .map_elements(lambda x: get_password_hash(f"{x}@@"), return_dtype=pl.String)
+                    .map_elements(
+                        lambda x: get_password_hash(f"{x}@@"), return_dtype=pl.String
+                    )
                     .alias("password")
                 )
         else:
-            logger.warning("No users found in SGA. Proceeding to check for disabled users.")
+            logger.warning(
+                "No users found in SGA. Proceeding to check for disabled users."
+            )
             new_users_df = pl.DataFrame()
             changed_users_df = pl.DataFrame()
 
         # Process disabled users (D)
         disabled_sga_df = self.sga_repo.get_disabled_users_df()
         if not disabled_sga_df.is_empty():
-             disabled_sga_df = disabled_sga_df.with_columns(
+            disabled_sga_df = disabled_sga_df.with_columns(
                 pl.col("username")
                 .str.replace_all(r"[\./-]", "")
                 .str.strip_chars()
                 .alias("username")
             )
-             # Only disable those who are currently active in SAM
-             active_sam_usernames = sam_users_df.filter(pl.col("is_active") == 1).select("username")
-             to_disable_df = disabled_sga_df.join(active_sam_usernames, on="username", how="inner")
-             logger.info(f"Detected {to_disable_df.height} users to disable.")
+            # Only disable those who are currently active in SAM
+            active_sam_usernames = sam_users_df.filter(pl.col("is_active") == 1).select(
+                "username"
+            )
+            to_disable_df = disabled_sga_df.join(
+                active_sam_usernames, on="username", how="inner"
+            )
+            logger.info(f"Detected {to_disable_df.height} users to disable.")
         else:
-             to_disable_df = pl.DataFrame()
+            to_disable_df = pl.DataFrame()
 
         # 3. Loading (L)
         if dry_run:
@@ -97,35 +105,41 @@ class IntegrationService(IIntegrationService):
         upsert_count = 0
         if not new_users_df.is_empty():
             upsert_count += self.sam_repo.upsert_users(new_users_df)
-        
+
         if not changed_users_df.is_empty():
             # For updates, we can reuse the same upsert_users method as it uses ON DUPLICATE KEY UPDATE
-            upsert_count += self.sam_repo.upsert_users(changed_users_df.drop(pl.col("^.*_sam$")))
-        
+            upsert_count += self.sam_repo.upsert_users(
+                changed_users_df.drop(pl.col("^.*_sam$"))
+            )
+
         disabled_count = 0
         if not to_disable_df.is_empty():
-            disabled_count = self.sam_repo.disable_users(to_disable_df["username"].to_list())
+            disabled_count = self.sam_repo.disable_users(
+                to_disable_df["username"].to_list()
+            )
 
-        logger.info(f"User sync finished. Upserted: {upsert_count}, Disabled: {disabled_count}")
+        logger.info(
+            f"User sync finished. Upserted: {upsert_count}, Disabled: {disabled_count}"
+        )
 
     async def sync_metadata(self, dry_run: bool = False):
         logger.info("Starting metadata synchronization (Departments & Positions)...")
-        
-        # This assumes SAM wants to keep separate tables for these. 
+
+        # This assumes SAM wants to keep separate tables for these.
         # If the schema doesn't have them, these will fail or return empty DFs.
-        
+
         # Sync Departments
         sga_depts = self.sga_repo.get_departments_df()
         if not sga_depts.is_empty():
             if not dry_run:
                 count = self.sam_repo.upsert_departments(sga_depts)
                 logger.info(f"Upserted {count} departments.")
-        
+
         # Sync Positions
         sga_positions = self.sga_repo.get_positions_df()
         if not sga_positions.is_empty():
             if not dry_run:
                 count = self.sam_repo.upsert_positions(sga_positions)
                 logger.info(f"Upserted {count} positions.")
-        
+
         logger.info("Metadata synchronization completed.")

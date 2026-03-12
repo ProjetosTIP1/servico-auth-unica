@@ -28,22 +28,26 @@ def sam_schema():
         "is_active": pl.Int64,
         "UNIDADE": pl.String,
         "cargo": pl.String,
-        "Departamento": pl.String
+        "Departamento": pl.String,
     }
 
 
 @pytest.mark.asyncio
-async def test_sync_users_new_user_detection(integration_service, mock_sga_repo, mock_sam_repo, sam_schema):
+async def test_sync_users_new_user_detection(
+    integration_service, mock_sga_repo, mock_sam_repo, sam_schema
+):
     # Setup: 1 new user in SGA, 0 in SAM
-    sga_df = pl.DataFrame({
-        "username": ["123.456.789-00"], # Needs cleaning
-        "nome_completo": ["New User"],
-        "cargo": ["Dev"],
-        "Departamento": ["IT"],
-        "UNIDADE": ["UnitA"]
-    })
+    sga_df = pl.DataFrame(
+        {
+            "username": ["123.456.789-00"],  # Needs cleaning
+            "nome_completo": ["New User"],
+            "cargo": ["Dev"],
+            "Departamento": ["IT"],
+            "UNIDADE": ["UnitA"],
+        }
+    )
     sam_df = pl.DataFrame(schema=sam_schema)
-    
+
     mock_sga_repo.get_users_df.return_value = sga_df
     mock_sga_repo.get_disabled_users_df.return_value = pl.DataFrame()
     mock_sam_repo.get_current_users_df.return_value = sam_df
@@ -61,24 +65,30 @@ async def test_sync_users_new_user_detection(integration_service, mock_sga_repo,
 
 
 @pytest.mark.asyncio
-async def test_sync_users_update_detection(integration_service, mock_sga_repo, mock_sam_repo, sam_schema):
+async def test_sync_users_update_detection(
+    integration_service, mock_sga_repo, mock_sam_repo, sam_schema
+):
     # Setup: User exists in both but name changed in SGA
-    sga_df = pl.DataFrame({
-        "username": ["admin"],
-        "nome_completo": ["Admin Updated"],
-        "cargo": ["Dev"],
-        "Departamento": ["IT"],
-        "UNIDADE": ["UnitA"]
-    })
-    sam_df = pl.DataFrame({
-        "username": ["admin"],
-        "nome_completo": ["Admin Old"],
-        "is_active": [1],
-        "UNIDADE": ["UnitA"],
-        "cargo": ["Dev"],
-        "Departamento": ["IT"]
-    })
-    
+    sga_df = pl.DataFrame(
+        {
+            "username": ["admin"],
+            "nome_completo": ["Admin Updated"],
+            "cargo": ["Dev"],
+            "Departamento": ["IT"],
+            "UNIDADE": ["UnitA"],
+        }
+    )
+    sam_df = pl.DataFrame(
+        {
+            "username": ["admin"],
+            "nome_completo": ["Admin Old"],
+            "is_active": [1],
+            "UNIDADE": ["UnitA"],
+            "cargo": ["Dev"],
+            "Departamento": ["IT"],
+        }
+    )
+
     mock_sga_repo.get_users_df.return_value = sga_df
     mock_sga_repo.get_disabled_users_df.return_value = pl.DataFrame()
     mock_sam_repo.get_current_users_df.return_value = sam_df
@@ -96,22 +106,26 @@ async def test_sync_users_update_detection(integration_service, mock_sga_repo, m
 
 
 @pytest.mark.asyncio
-async def test_sync_users_disabled_detection(integration_service, mock_sga_repo, mock_sam_repo, sam_schema):
+async def test_sync_users_disabled_detection(
+    integration_service, mock_sga_repo, mock_sam_repo, sam_schema
+):
     # Setup: Active user in SAM is now in disabled list from SGA
-    mock_sga_repo.get_users_df.return_value = pl.DataFrame() # No active in SGA for this test
-    
-    disabled_df = pl.DataFrame({
-        "username": ["former_employee"]
-    })
-    sam_df = pl.DataFrame({
-        "username": ["former_employee"],
-        "nome_completo": ["Old User"],
-        "is_active": [1], # Currently active
-        "UNIDADE": ["UnitA"],
-        "cargo": ["Dev"],
-        "Departamento": ["IT"]
-    })
-    
+    mock_sga_repo.get_users_df.return_value = (
+        pl.DataFrame()
+    )  # No active in SGA for this test
+
+    disabled_df = pl.DataFrame({"username": ["former_employee"]})
+    sam_df = pl.DataFrame(
+        {
+            "username": ["former_employee"],
+            "nome_completo": ["Old User"],
+            "is_active": [1],  # Currently active
+            "UNIDADE": ["UnitA"],
+            "cargo": ["Dev"],
+            "Departamento": ["IT"],
+        }
+    )
+
     mock_sga_repo.get_disabled_users_df.return_value = disabled_df
     mock_sam_repo.get_current_users_df.return_value = sam_df
     mock_sam_repo.disable_users.return_value = 1
@@ -124,9 +138,19 @@ async def test_sync_users_disabled_detection(integration_service, mock_sga_repo,
 
 
 @pytest.mark.asyncio
-async def test_sync_users_dry_run(integration_service, mock_sga_repo, mock_sam_repo, sam_schema):
+async def test_sync_users_dry_run(
+    integration_service, mock_sga_repo, mock_sam_repo, sam_schema
+):
     # Setup
-    sga_df = pl.DataFrame({"username": ["new"], "nome_completo": ["New"], "cargo": ["X"], "Departamento": ["Y"], "UNIDADE": ["Z"]})
+    sga_df = pl.DataFrame(
+        {
+            "username": ["new"],
+            "nome_completo": ["New"],
+            "cargo": ["X"],
+            "Departamento": ["Y"],
+            "UNIDADE": ["Z"],
+        }
+    )
     mock_sga_repo.get_users_df.return_value = sga_df
     mock_sga_repo.get_disabled_users_df.return_value = pl.DataFrame()
     mock_sam_repo.get_current_users_df.return_value = pl.DataFrame(schema=sam_schema)

@@ -15,7 +15,9 @@ class IntegrationDepartment(BaseModel):
 class IntegrationPosition(BaseModel):
     code: str = Field(description="Unique code of the position/cargo")
     name: str = Field(description="Name of the position")
-    branch: Optional[str] = Field(default=None, description="Branch/Filial associated with the position")
+    branch: Optional[str] = Field(
+        default=None, description="Branch/Filial associated with the position"
+    )
 
 
 class IntegrationUser(BaseModel):
@@ -24,15 +26,21 @@ class IntegrationUser(BaseModel):
     email: Optional[str] = Field(default=None, description="Email address")
     unit_id: Optional[int] = Field(default=None, description="Mapped Unit ID")
     position_id: Optional[int] = Field(default=None, description="Mapped Position ID")
-    department_id: Optional[str] = Field(default=None, description="Mapped Department ID")
+    department_id: Optional[str] = Field(
+        default=None, description="Mapped Department ID"
+    )
     is_active: bool = Field(default=True, description="Active status")
-    is_integrated: bool = Field(default=True, description="Indicates if the user was integrated from SGA")
+    is_integrated: bool = Field(
+        default=True, description="Indicates if the user was integrated from SGA"
+    )
 
 
 # ── DTOs for Source Data (SGA) ─────────────────────────────────────────────
 
+
 class SgaUserDTO(BaseModel):
     """Data Transfer Object for users fetched from SGA (SQL Server)"""
+
     username: str
     nome_completo: str
     email: Optional[str] = None
@@ -44,12 +52,14 @@ class SgaUserDTO(BaseModel):
 
 class SgaDepartmentDTO(BaseModel):
     """Data Transfer Object for departments fetched from SGA"""
+
     codigo: str = Field(alias="Codigo")
     nome: str = Field(alias="Nome")
 
 
 class SgaPositionDTO(BaseModel):
     """Data Transfer Object for positions/cargos fetched from SGA"""
+
     codigo: str = Field(alias="Codigo")
     nome: str = Field(alias="Nome")
     departamento: str = Field(alias="Departamento")
