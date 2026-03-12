@@ -27,46 +27,47 @@ class IntegrationService(IIntegrationService):
         sga_users_df = self.sga_repo.get_users_df()
         sam_users_df = self.sam_repo.get_current_users_df()
         
-        if sga_users_df.is_empty():
-            logger.warning("No users found in SGA. Skipping user sync.")
-            return
-
         # 2. Transformation (T)
-        # Clean usernames: remove . / - and spaces, then deduplicate
-        sga_users_df = sga_users_df.with_columns(
-            pl.col("username")
-            .str.replace_all(r"[\./-]", "")
-            .str.strip_chars()
-            .alias("username")
-        ).unique(subset=["username"], keep="last")
-
-        # Join to find new users vs updates
-        # New users: in SGA but NOT in SAM
-        new_users_df = sga_users_df.join(sam_users_df, on="username", how="anti")
-        
-        # Updates: in both SGA and SAM, but with differences
-        common_users_df = sga_users_df.join(
-            sam_users_df, on="username", how="inner", suffix="_sam"
-        )
-        
-        # Filter changed users: compare relevant fields
-        changed_users_df = common_users_df.filter(
-            (pl.col("nome_completo") != pl.col("nome_completo_sam")) |
-            (pl.col("cargo") != pl.col("cargo_sam")) |
-            (pl.col("Departamento") != pl.col("Departamento_sam")) |
-            (pl.col("UNIDADE") != pl.col("UNIDADE_sam"))
-        )
-
-        # Process new users: generate password
-        if not new_users_df.is_empty():
-            logger.info(f"Detected {new_users_df.height} new users.")
-            # Map default password: first 6 chars of username + @@ (legacy pattern)
-            new_users_df = new_users_df.with_columns(
+        if not sga_users_df.is_empty():
+            # Clean usernames: remove . / - and spaces, then deduplicate
+            sga_users_df = sga_users_df.with_columns(
                 pl.col("username")
-                .str.slice(0, 6)
-                .map_elements(lambda x: get_password_hash(f"{x}@@"), return_dtype=pl.String)
-                .alias("password")
+                .str.replace_all(r"[\./-]", "")
+                .str.strip_chars()
+                .alias("username")
+            ).unique(subset=["username"], keep="last")
+
+            # Join to find new users vs updates
+            # New users: in SGA but NOT in SAM
+            new_users_df = sga_users_df.join(sam_users_df, on="username", how="anti")
+            
+            # Updates: in both SGA and SAM, but with differences
+            common_users_df = sga_users_df.join(
+                sam_users_df, on="username", how="inner", suffix="_sam"
             )
+            
+            # Filter changed users: compare relevant fields
+            changed_users_df = common_users_df.filter(
+                (pl.col("nome_completo") != pl.col("nome_completo_sam")) |
+                (pl.col("cargo") != pl.col("cargo_sam")) |
+                (pl.col("Departamento") != pl.col("Departamento_sam")) |
+                (pl.col("UNIDADE") != pl.col("UNIDADE_sam"))
+            )
+
+            # Process new users: generate password
+            if not new_users_df.is_empty():
+                logger.info(f"Detected {new_users_df.height} new users.")
+                # Map default password: first 6 chars of username + @@ (legacy pattern)
+                new_users_df = new_users_df.with_columns(
+                    pl.col("username")
+                    .str.slice(0, 6)
+                    .map_elements(lambda x: get_password_hash(f"{x}@@"), return_dtype=pl.String)
+                    .alias("password")
+                )
+        else:
+            logger.warning("No users found in SGA. Proceeding to check for disabled users.")
+            new_users_df = pl.DataFrame()
+            changed_users_df = pl.DataFrame()
 
         # Process disabled users (D)
         disabled_sga_df = self.sga_repo.get_disabled_users_df()
