@@ -78,9 +78,7 @@ class UserCreateType(BaseModel):
     branche: Optional[str] = Field(
         default=None, description="The branch or division of the user"
     )
-    cpf_cnpj: str = Field(
-        default=..., description="The CPF or CNPJ number of the user"
-    )
+    cpf_cnpj: str = Field(default=..., description="The CPF or CNPJ number of the user")
     registration_number: Optional[str] = Field(
         default=None, description="The registration number or employee ID of the user"
     )

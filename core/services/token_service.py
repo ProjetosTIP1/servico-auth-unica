@@ -132,11 +132,13 @@ class TokenService(ITokenService):
         try:
             refresh_token: str | None = token.refresh_token
             access_token: str | None = token.access_token
-            
+
             # Safe check for required tokens
             if not refresh_token or not access_token:
-                raise InvalidCredentialsException("Refresh token and access token are required")
-            
+                raise InvalidCredentialsException(
+                    "Refresh token and access token are required"
+                )
+
             # Validate the token
             if not await self._validate_refresh_token(refresh_token):
                 raise TokenRevokedException("Invalid or revoked refresh token")
@@ -146,9 +148,7 @@ class TokenService(ITokenService):
                 raise UserNotFoundException("User not found")
 
             # Create the token pair
-            refresh_token: str = await self.create_refresh_token(
-                user, refresh_token
-            )
+            refresh_token: str = await self.create_refresh_token(user, refresh_token)
             access_token: str = await self.create_access_token(user, refresh_token)
 
             # Revoke the old refresh token

@@ -63,7 +63,7 @@ class UserService(IUserService):
         try:
             # Safe check for required fields
             verified: UserCreateType = UserCreateType.model_validate(user_data)
-            
+
             # Safe checks for existing user by CPF/CNPJ and email to prevent duplicates
             cpf_cnpj_user: (
                 UserType | None

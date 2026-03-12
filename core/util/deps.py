@@ -204,7 +204,7 @@ async def get_current_user(
 
     # ── 3. Identity & active-status check ────────────────────────────────────
     try:
-        user: UserType = await user_repo.get_user_by_cpfcnpj(cpf_cnpj)
+        user: UserType | None = await user_repo.get_user_by_cpfcnpj(cpf_cnpj)
         if user is None:
             raise credentials_exception
 
