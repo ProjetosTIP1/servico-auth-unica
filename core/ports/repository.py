@@ -108,3 +108,66 @@ class IUserRepository(ABC):
     async def delete_user(self, user_id: int) -> None:
         """Soft delete a user by ID"""
         pass
+
+
+class ISgaRepository(ABC):
+    """Interface for extracting data from SGA (SQL Server) using Polars"""
+
+    @abstractmethod
+    def get_users_df(self):
+        """Fetch all active users from SGA as a Polars DataFrame"""
+        pass
+
+    @abstractmethod
+    def get_disabled_users_df(self):
+        """Fetch users to be disabled from SGA as a Polars DataFrame"""
+        pass
+
+    @abstractmethod
+    def get_departments_df(self):
+        """Fetch all departments from SGA as a Polars DataFrame"""
+        pass
+
+    @abstractmethod
+    def get_positions_df(self):
+        """Fetch all positions/cargos from SGA as a Polars DataFrame"""
+        pass
+
+
+class ISamIntegrationRepository(ABC):
+    """Interface for synchronizing and fetching state from SAM (MariaDB)"""
+
+    @abstractmethod
+    def get_current_users_df(self):
+        """Fetch current users from SAM as a Polars DataFrame for comparison"""
+        pass
+
+    @abstractmethod
+    def get_units_mapping_df(self):
+        """Fetch units mapping (Sigla -> ID) from SAM"""
+        pass
+
+    @abstractmethod
+    def get_positions_mapping_df(self):
+        """Fetch positions mapping (Codigo -> ID) from SAM"""
+        pass
+
+    @abstractmethod
+    def upsert_departments(self, df) -> int:
+        """Batch upsert departments into SAM"""
+        pass
+
+    @abstractmethod
+    def upsert_positions(self, df) -> int:
+        """Batch upsert positions into SAM"""
+        pass
+
+    @abstractmethod
+    def upsert_users(self, df) -> int:
+        """Batch upsert users into SAM (new and updates)"""
+        pass
+
+    @abstractmethod
+    def disable_users(self, usernames: list[str]) -> int:
+        """Batch disable users in SAM"""
+        pass

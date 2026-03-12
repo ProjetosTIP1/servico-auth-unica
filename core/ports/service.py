@@ -114,6 +114,25 @@ class IUserService(ABC):
         pass
 
 
+class IIntegrationService(ABC):
+    """Orchestrates the synchronization between SGA and SAM"""
+
+    @abstractmethod
+    async def sync_all(self, dry_run: bool = False):
+        """Perform a full synchronization (Departments, Positions, Users)"""
+        pass
+
+    @abstractmethod
+    async def sync_users(self, dry_run: bool = False):
+        """Synchronize users only"""
+        pass
+
+    @abstractmethod
+    async def sync_metadata(self, dry_run: bool = False):
+        """Synchronize departments and positions only"""
+        pass
+
+
 class IMicrosoftAuthService(ABC):
     """
     Port (interface) for Microsoft / Azure AD token validation.
