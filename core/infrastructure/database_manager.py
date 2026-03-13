@@ -71,9 +71,8 @@ class DatabaseManager:
             if db:
                 try:
                     # Perform a simple query to check connectivity
-                    async for txn in db.transaction():
+                    async with db.transaction() as txn:
                         await txn.execute("SELECT 1")
-                        break
                     results[name] = {"status": "healthy"}
                 except Exception as e:
                     logger.error(f"Health check failed for database '{name}': {e}")
