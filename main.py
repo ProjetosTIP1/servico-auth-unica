@@ -7,7 +7,8 @@ from api.handlers.user_handler import user_router
 from api.handlers.ms_handler import ms_router
 from api.handlers.integration_handler import router as integration_router
 
-from core.infrastructure.database_manager import db_manager
+
+from core.infrastructure.database_manager import db_manager, DatabaseManager
 
 from api.middlewares.correlation_id_mw import correlation_id_middleware
 
@@ -21,7 +22,11 @@ async def lifespan(app: FastAPI):
     # Startup
     try:
         await db_manager.initialize()
-        app.state.db_manager = db_manager
+        status = await db_manager.health_check()
+        if not status:
+            logger.error("Database health check failed. Check connection settings.")
+            raise ConnectionError("Failed to connect to database.")
+        app.state.db_manager: DatabaseManager = db_manager
         logger.info("Database connection established.")
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")

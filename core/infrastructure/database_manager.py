@@ -41,9 +41,10 @@ class DatabaseManager:
         from core.infrastructure.sqls_adapter import SqlServerAdapter
 
         # Initialize MariaDB
-        if settings.database_url:
+        url: str = settings.database_url
+        if url:
             try:
-                mariadb = MariaDbAdapter(settings.database_url)
+                mariadb = MariaDbAdapter(url)
                 await self.register("mariadb", mariadb)
             except Exception as e:
                 logger.error(f"Failed to initialize MariaDB: {e}")
@@ -51,9 +52,10 @@ class DatabaseManager:
             logger.warning("database_url not configured. MariaDB will not be available.")
 
         # Initialize SQL Server
-        if settings.sqlserver_url:
+        sqlserver_url: str = settings.sqlserver_url
+        if sqlserver_url:
             try:
-                sqls = SqlServerAdapter(settings.sqlserver_url)
+                sqls = SqlServerAdapter(sqlserver_url)
                 await self.register("sql_server", sqls)
             except Exception as e:
                 logger.error(f"Failed to initialize SQL Server: {e}")

@@ -125,7 +125,7 @@ class Settings(BaseSettings):
         user = quote_plus(self.MARIADB_USER)
         password = quote_plus(self.MARIADB_PASSWORD)
         return (
-            f"mariadb+mariadbconnector://{user}:{password}"
+            f"mariadb+asyncmy://{user}:{password}"
             f"@{self.MARIADB_HOST}:{self.MARIADB_PORT}/{self.MARIADB_DB}"
         )
 

@@ -25,7 +25,10 @@ class SqlServerTransaction(ITransaction):
         def _execute() -> list[dict[str, Any]]:
             cursor = self._conn.cursor()
             try:
-                cursor.execute(query, params or {})
+                if params:
+                    cursor.execute(query, params)
+                else:
+                    cursor.execute(query)
                 if cursor.description:
                     columns = [column[0] for column in cursor.description]
                     return [dict(zip(columns, row)) for row in cursor.fetchall()]
