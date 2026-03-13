@@ -1,23 +1,20 @@
 from core.models.oauth_models import TokenType
 
 from core.ports.repository import ITokenRepository
-from core.ports.infrastructure import IDatabase
+from core.ports.infrastructure import ITransaction
 from core.models.oauth_models import TokenModel, TokenCreateModel, TokenUpdateModel
 from core.helpers.logger_helper import logger
 
 
 class TokenRepository(ITokenRepository):
-    def __init__(self, db: IDatabase):
-        self.db: IDatabase = db
-
-    async def create_access_token(self, token: TokenCreateModel) -> TokenModel:
+    async def create_access_token(self, txn: ITransaction, token: TokenCreateModel) -> TokenModel:
         """Create an access token record in the database."""
         try:
             query = """
                 INSERT INTO tokens (user_id, token, type, parent_token, expires_at, created_at, updated_at)
                 VALUES (:user_id, :token, :type, :parent_token, :expires_at, NOW(), NOW())
             """
-            await self.db.execute_with_params(
+            await txn.execute(
                 query,
                 {
                     "user_id": token.user_id,
@@ -28,10 +25,10 @@ class TokenRepository(ITokenRepository):
                 },
             )
             logger.debug(message=f"Access token created for user ID: {token.user_id}")
-            token: TokenModel | None = await self.get_token_by_string(token.token)
-            if not token:
+            token_res: TokenModel | None = await self.get_token_by_string(txn, token.token)
+            if not token_res:
                 raise Exception("Token not found after creation")
-            return token
+            return token_res
         except Exception as e:
             logger.error(
                 message=f"Error creating access token: {str(e)}",
@@ -39,14 +36,14 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error creating access token: {str(e)}")
 
-    async def create_refresh_token(self, token: TokenCreateModel) -> TokenModel:
+    async def create_refresh_token(self, txn: ITransaction, token: TokenCreateModel) -> TokenModel:
         """Create a refresh token record in the database."""
         try:
             query = """
                 INSERT INTO tokens (user_id, token, type, parent_token, expires_at, created_at, updated_at)
                 VALUES (:user_id, :token, :type, :parent_token, :expires_at, NOW(), NOW())
             """
-            await self.db.execute_with_params(
+            await txn.execute(
                 query,
                 {
                     "user_id": token.user_id,
@@ -57,10 +54,10 @@ class TokenRepository(ITokenRepository):
                 },
             )
             logger.debug(message=f"Refresh token created for user ID: {token.user_id}")
-            token: TokenModel | None = await self.get_token_by_string(token.token)
-            if not token:
+            token_res: TokenModel | None = await self.get_token_by_string(txn, token.token)
+            if not token_res:
                 raise Exception("Token not found after creation")
-            return token
+            return token_res
         except Exception as e:
             logger.error(
                 message=f"Error creating refresh token: {str(e)}",
@@ -68,7 +65,7 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error creating refresh token: {str(e)}")
 
-    async def get_last_refresh_token(self, user_id: str) -> TokenModel:
+    async def get_last_refresh_token(self, txn: ITransaction, user_id: str) -> TokenModel:
         """Retrieve the most recent refresh token for a user."""
         try:
             query = """
@@ -78,7 +75,7 @@ class TokenRepository(ITokenRepository):
                 ORDER BY created_at DESC
                 LIMIT 1
             """
-            result = await self.db.execute_with_params(query, {"user_id": user_id})
+            result = await txn.execute(query, {"user_id": user_id})
             if not result:
                 raise Exception("No refresh token found for the user")
             token_data = result[0]
@@ -102,7 +99,7 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error retrieving last refresh token: {str(e)}")
 
-    async def get_token_by_string(self, token: str) -> TokenModel | None:
+    async def get_token_by_string(self, txn: ITransaction, token: str) -> TokenModel | None:
         """Retrieve a token by its JWT string value."""
         try:
             query = """
@@ -111,7 +108,7 @@ class TokenRepository(ITokenRepository):
                 WHERE token = :token
                 LIMIT 1
             """
-            result = await self.db.execute_with_params(query, {"token": token})
+            result = await txn.execute(query, {"token": token})
             if not result:
                 return None
             token_data = result[0]
@@ -134,7 +131,7 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error retrieving token by string: {str(e)}")
 
-    async def update(self, token: TokenUpdateModel) -> TokenModel:
+    async def update(self, txn: ITransaction, token: TokenUpdateModel) -> TokenModel:
         """Update a token's revoked/consumed/expires fields."""
         try:
             query = """
@@ -145,7 +142,7 @@ class TokenRepository(ITokenRepository):
                     updated_at = NOW()
                 WHERE token = :token
             """
-            await self.db.execute_with_params(
+            await txn.execute(
                 query,
                 {
                     "revoked": token.revoked,
@@ -154,7 +151,7 @@ class TokenRepository(ITokenRepository):
                     "token": token.token,
                 },
             )
-            updated_token = await self.get_token_by_string(token.token)
+            updated_token = await self.get_token_by_string(txn, token.token)
             if not updated_token:
                 raise Exception("Token not found after update")
 
@@ -169,7 +166,7 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error updating token: {str(e)}")
 
-    async def revoke_token(self, token: str) -> None:
+    async def revoke_token(self, txn: ITransaction, token: str) -> None:
         """Mark a token as revoked, with a 30-second grace period."""
         try:
             query = """
@@ -179,7 +176,7 @@ class TokenRepository(ITokenRepository):
                     updated_at = NOW()
                 WHERE token = :token
             """
-            await self.db.execute_with_params(query, {"token": token})
+            await txn.execute(query, {"token": token})
             logger.debug(message=f"Token revoked with ID: {token[:10]}...")
         except Exception as e:
             logger.error(
@@ -188,7 +185,7 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error revoking token: {str(e)}")
 
-    async def revoke_all_user_tokens(self, user_id: int) -> None:
+    async def revoke_all_user_tokens(self, txn: ITransaction, user_id: int) -> None:
         """Revoke all active tokens for a given user (security breach response)."""
         try:
             query = """
@@ -196,7 +193,7 @@ class TokenRepository(ITokenRepository):
                 SET revoked = TRUE, consumed_at = NOW(), updated_at = NOW()
                 WHERE user_id = :user_id AND revoked = FALSE
             """
-            await self.db.execute_with_params(query, {"user_id": user_id})
+            await txn.execute(query, {"user_id": user_id})
             logger.debug(message=f"All tokens revoked for user ID: {user_id}")
         except Exception as e:
             logger.error(

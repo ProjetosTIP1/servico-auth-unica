@@ -1,6 +1,6 @@
 from typing import List
 from core.ports.repository import IUserRepository
-from core.ports.infrastructure import IDatabase
+from core.ports.infrastructure import ITransaction
 
 from core.models.user_models import UserType, UserUpdateType, UserCreateType
 
@@ -8,10 +8,7 @@ from core.helpers.sql_helper import filter_valid_update_clauses
 
 
 class UserRepository(IUserRepository):
-    def __init__(self, db: IDatabase):
-        self.db = db
-
-    async def get_user_by_cpfcnpj(self, cpf_cnpj: str) -> UserType | None:
+    async def get_user_by_cpfcnpj(self, txn: ITransaction, cpfcnpj: str) -> UserType | None:
         """Get user by CPF/CNPJ"""
         try:
             query = """
@@ -19,7 +16,7 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE cpf_cnpj = :cpf_cnpj AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"cpf_cnpj": cpf_cnpj})
+            results = await txn.execute(query, {"cpf_cnpj": cpfcnpj})
             if results:
                 user_data = results[0]
                 return UserType(**user_data)
@@ -27,7 +24,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by CPF/CNPJ: {e}")
 
-    async def get_user_by_id(self, user_id: int) -> UserType | None:
+    async def get_user_by_id(self, txn: ITransaction, user_id: int) -> UserType | None:
         """Get user by ID"""
         try:
             query = """
@@ -35,7 +32,7 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE id = :id AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"id": user_id})
+            results = await txn.execute(query, {"id": user_id})
             if results:
                 user_data = results[0]
                 return UserType(**user_data)
@@ -43,7 +40,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by ID: {e}")
 
-    async def get_user_by_email(self, email: str) -> UserType | None:
+    async def get_user_by_email(self, txn: ITransaction, email: str) -> UserType | None:
         """Get user by email"""
         try:
             query = """
@@ -51,7 +48,7 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE email = :email AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"email": email})
+            results = await txn.execute(query, {"email": email})
             if results:
                 user_data = results[0]
                 return UserType(**user_data)
@@ -59,7 +56,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by email: {e}")
 
-    async def get_user_by_ms_oid(self, ms_oid: str) -> UserType | None:
+    async def get_user_by_ms_oid(self, txn: ITransaction, ms_oid: str) -> UserType | None:
         """Get user by Microsoft object ID"""
         try:
             query = """
@@ -67,7 +64,7 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE ms_oid = :ms_oid AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"ms_oid": ms_oid})
+            results = await txn.execute(query, {"ms_oid": ms_oid})
             if results:
                 user_data = results[0]
                 return UserType(**user_data)
@@ -75,7 +72,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by MS OID: {e}")
 
-    async def search_users_by_name(self, name_query: str) -> List[UserType]:
+    async def search_users_by_name(self, txn: ITransaction, name_query: str) -> List[UserType]:
         """Search users by name (partial match)"""
         try:
             query = """
@@ -83,14 +80,14 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE (full_name LIKE :name_query OR first_name LIKE :name_query OR last_name LIKE :name_query) AND is_active = 1
             """
-            results = await self.db.execute_with_params(
+            results = await txn.execute(
                 query, {"name_query": f"%{name_query}%"}
             )
             return [UserType(**data) for data in results]
         except Exception as e:
             raise Exception(f"Error searching users by name: {e}")
 
-    async def get_user_hashed_password(self, email: str) -> str | None:
+    async def get_user_hashed_password(self, txn: ITransaction, email: str) -> str | None:
         """Get the hashed password for a user by email"""
         try:
             query = """
@@ -98,14 +95,14 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE email = :email AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"email": email})
+            results = await txn.execute(query, {"email": email})
             if results:
                 return results[0]["hashed_password"]
             return None
         except Exception as e:
             raise Exception(f"Error fetching hashed password: {e}")
 
-    async def is_user_admin(self, cpf_cnpj: str) -> bool:
+    async def is_user_admin(self, txn: ITransaction, cpf_cnpj: str) -> bool:
         """Check if the user with the given CPF/CNPJ is an admin"""
         try:
             query = """
@@ -113,7 +110,7 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE cpf_cnpj = :cpf_cnpj AND is_active = 1
             """
-            results = await self.db.execute_with_params(query, {"cpf_cnpj": cpf_cnpj})
+            results = await txn.execute(query, {"cpf_cnpj": cpf_cnpj})
             if results:
                 return results[0]["manager"] == 1
             return False
@@ -121,7 +118,7 @@ class UserRepository(IUserRepository):
             raise Exception(f"Error checking if user is admin: {e}")
 
     async def create_user(
-        self, user_data: UserCreateType, hashed_password: str
+        self, txn: ITransaction, user_data: UserCreateType, hashed_password: str
     ) -> UserType:
         """Create a new user"""
         try:
@@ -129,11 +126,14 @@ class UserRepository(IUserRepository):
             INSERT INTO users (username, email, ms_oid, full_name, first_name, last_name, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, hashed_password) 
             VALUES (:username, :email, :ms_oid, :full_name, :first_name, :last_name, :unit, :job, :branche, :cpf_cnpj, :registration_number, :profile_picture_url, :hashed_password)
             """
-            await self.db.execute_with_params(
+            await txn.execute(
                 query, {**user_data.model_dump(), "hashed_password": hashed_password}
             )
-            new_user: UserType | None = await self.get_user_by_username(
-                user_data.username
+            
+            # Use the same transaction to get the user back
+            # We use get_user_by_cpfcnpj as it's unique
+            new_user: UserType | None = await self.get_user_by_cpfcnpj(
+                txn, user_data.cpf_cnpj
             )
             if new_user is None:
                 raise Exception("Error creating user: User not found after creation")
@@ -141,7 +141,7 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error creating user: {e}")
 
-    async def list_users(self) -> List[UserType]:
+    async def list_users(self, txn: ITransaction) -> List[UserType]:
         """List all users"""
         try:
             query = """
@@ -149,20 +149,17 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE is_active = 1
             """
-            results = await self.db.execute(query)
+            results = await txn.execute(query)
             return [UserType(**data) for data in results]
         except Exception as e:
             raise Exception(f"Error listing users: {e}")
 
-    async def update_user(self, user_id: int, user_data: UserUpdateType) -> UserType:
+    async def update_user(self, txn: ITransaction, user_id: int, user_data: UserUpdateType) -> UserType:
         """Partially update a user — only columns that were explicitly set are touched."""
         try:
-            # Build the SET clause only from the fields the client actually sent.
-            # model_dump(exclude_unset=True) ignores fields that were never provided,
-            # even if they allow None (i.e. optional fields keep their DB value).
             fields = user_data.model_dump(exclude_unset=True)
             if not fields:
-                user: UserType | None = await self.get_user_by_id(user_id)
+                user: UserType | None = await self.get_user_by_id(txn, user_id)
                 if user is None:
                     raise Exception("User not found")
                 return user
@@ -174,15 +171,15 @@ class UserRepository(IUserRepository):
             SET {set_clause}, updated_at = NOW()
             WHERE id = :id
             """
-            await self.db.execute_with_params(query, params)
-            up_user: UserType | None = await self.get_user_by_id(user_id)
+            await txn.execute(query, params)
+            up_user: UserType | None = await self.get_user_by_id(txn, user_id)
             if up_user is None:
                 raise Exception("User not found after update")
             return up_user
         except Exception as e:
             raise Exception(f"Error updating user: {e}")
 
-    async def update_user_password(self, user_id: int, hashed_password: str) -> None:
+    async def update_user_password(self, txn: ITransaction, user_id: int, hashed_password: str) -> None:
         """Update the password of an existing user"""
         try:
             query = """
@@ -190,13 +187,13 @@ class UserRepository(IUserRepository):
             SET hashed_password = :hashed_password 
             WHERE id = :id
             """
-            await self.db.execute_with_params(
+            await txn.execute(
                 query, {"hashed_password": hashed_password, "id": user_id}
             )
         except Exception as e:
             raise Exception(f"Error updating user password: {e}")
 
-    async def delete_user(self, user_id: int) -> None:
+    async def delete_user(self, txn: ITransaction, user_id: int) -> None:
         """Soft delete a user by ID"""
         try:
             query = """
@@ -204,6 +201,6 @@ class UserRepository(IUserRepository):
             SET is_active = 0 
             WHERE id = :id
             """
-            await self.db.execute_with_params(query, {"id": user_id})
+            await txn.execute(query, {"id": user_id})
         except Exception as e:
             raise Exception(f"Error deleting user: {e}")

@@ -30,6 +30,7 @@ from core.models.oauth_models import TokenResponseModel
 
 from core.ports.service import IMicrosoftAuthService, ITokenService
 from core.ports.repository import IUserRepository
+from core.ports.infrastructure import IDatabase, ITransaction
 
 from core.helpers.logger_helper import logger
 from core.helpers.authentication_helper import get_password_hash
@@ -61,10 +62,12 @@ class MicrosoftLoginService:
         ms_auth: IMicrosoftAuthService,
         user_repo: IUserRepository,
         token_service: ITokenService,
+        db: IDatabase,
     ) -> None:
         self._ms_auth = ms_auth
         self._user_repo = user_repo
         self._token_service = token_service
+        self.db = db
 
     async def execute(self, token: str) -> MicrosoftLoginResult:
         """
@@ -92,15 +95,17 @@ class MicrosoftLoginService:
 
         # Step 2 — Check if the user exists in our system, or create/link as needed
         try:
-            user, is_new_user = await self._check_user_sync(identity)
+            # We wrap user sync in its own transaction
+            async with self.db.transaction() as txn:
+                user, is_new_user = await self._check_user_sync(txn, identity)
         except Exception as e:
             logger.error(f"User synchronization failed: {e}")
             raise RuntimeError(
-                "User synchronization failed after Microsoft token validation."
+                f"User synchronization failed after Microsoft token validation: {e}"
             )
 
         # Step 3 — Issue our own tokens
-        # We need a refresh token and an access token
+        # Note: token_service methods will start their own transactions
         try:
             refresh_token: str = await self._token_service.create_refresh_token(
                 user, ""
@@ -124,7 +129,7 @@ class MicrosoftLoginService:
         )
 
     async def _check_user_sync(
-        self, identity: MicrosoftUserIdentity
+        self, txn: ITransaction, identity: MicrosoftUserIdentity
     ) -> Tuple[UserType, bool]:
         """
         Check if a user with the given Microsoft OID exists. If not, check by email or name.
@@ -139,27 +144,33 @@ class MicrosoftLoginService:
             else identity.preferred_username or identity.email.split("@")[0]
         )
         try:
-            user = await self._user_repo.get_user_by_ms_oid(identity.oid)
+            user = await self._user_repo.get_user_by_ms_oid(txn, identity.oid)
             if user:
                 return user, is_new_user
 
             # No user with this MS OID, check by email
-            user = await self._user_repo.get_user_by_email(identity.email)
+            user = await self._user_repo.get_user_by_email(txn, identity.email)
             if user:
                 # Link MS OID to existing user
                 await self._user_repo.update_user(
-                    user.id, UserUpdateType(ms_oid=identity.oid)
+                    txn, user.id, UserUpdateType(ms_oid=identity.oid)
                 )
-                return await self._user_repo.get_user_by_id(user.id), is_new_user
+                linked_user = await self._user_repo.get_user_by_id(txn, user.id)
+                if linked_user is None:
+                    raise RuntimeError("User not found after linking OID")
+                return linked_user, is_new_user
 
             # No user with this email, check by name
-            users = await self._user_repo.search_users_by_name(name)
+            users = await self._user_repo.search_users_by_name(txn, name)
             if users:
                 # Link MS OID to the first matching user
                 await self._user_repo.update_user(
-                    users[0].id, UserUpdateType(ms_oid=identity.oid)
+                    txn, users[0].id, UserUpdateType(ms_oid=identity.oid)
                 )
-                return await self._user_repo.get_user_by_id(users[0].id), is_new_user
+                linked_user = await self._user_repo.get_user_by_id(txn, users[0].id)
+                if linked_user is None:
+                    raise RuntimeError("User not found after linking OID (by name)")
+                return linked_user, is_new_user
 
             # No user with this email or name, create new user
             new_user_data = UserCreateType(
@@ -174,8 +185,8 @@ class MicrosoftLoginService:
             random_password = secrets.token_urlsafe(32)
             hashed_password = get_password_hash(random_password)
             return await self._user_repo.create_user(
-                new_user_data, hashed_password
+                txn, new_user_data, hashed_password
             ), True
         except Exception as e:
             logger.error(f"Database error during user sync: {e}")
-            raise RuntimeError("Internal error during user synchronization.")
+            raise

@@ -69,7 +69,7 @@ class DatabaseManager:
     
     async def get(self, name: str) -> IDatabase:
         """Retrieve a registered database connection by name."""
-        db = self._databases.get(name)
+        db: IDatabase | None = self._databases.get(name)
         if not db:
             logger.error(f"Database '{name}' not found.")
             raise ValueError(f"Database '{name}' not registered.")
@@ -85,6 +85,7 @@ class DatabaseManager:
         logger.info("Closing database connections...")
 
         for name, db in list(self._databases.items()):
+            db: IDatabase | None = db
             if db:
                 try:
                     await db.disconnect()
@@ -111,7 +112,7 @@ class DatabaseManager:
         results: dict[str, Any] = {}
 
         for name in ["mariadb", "sql_server"]:
-            db = self._databases.get(name)
+            db: IDatabase | None = self._databases.get(name)
             if db:
                 try:
                     # Perform a simple query to check connectivity

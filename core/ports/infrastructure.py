@@ -30,7 +30,7 @@ class IDatabase(ABC):
     """
     
     @abstractmethod
-    def transaction(self) -> AsyncGenerator[ITransaction, None]:
+    def transaction(self) -> AsyncGenerator[ITransaction]:
         """
         Yields an ITransaction. 
         Automatically handles checkout/checkin to the pool.
