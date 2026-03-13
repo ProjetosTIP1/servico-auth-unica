@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from core.ports.service import ITokenService
 from core.ports.repository import ITokenRepository, IUserRepository
-from core.ports.infrastructure import IDatabase
+from core.ports.infrastructure import IDatabase, ITransaction
 
 from core.models.user_models import UserType
 from core.models.oauth_models import (

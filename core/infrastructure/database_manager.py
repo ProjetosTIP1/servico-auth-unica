@@ -41,24 +41,24 @@ class DatabaseManager:
         from core.infrastructure.sqls_adapter import SqlServerAdapter
 
         # Initialize MariaDB
-        if settings.MARIADB_URL:
+        if settings.database_url:
             try:
-                mariadb = MariaDbAdapter(settings.MARIADB_URL)
+                mariadb = MariaDbAdapter(settings.database_url)
                 await self.register("mariadb", mariadb)
             except Exception as e:
                 logger.error(f"Failed to initialize MariaDB: {e}")
         else:
-            logger.warning("MARIADB_URL not configured. MariaDB will not be available.")
+            logger.warning("database_url not configured. MariaDB will not be available.")
 
         # Initialize SQL Server
-        if settings.SQL_SERVER_CONNECTION_STRING:
+        if settings.sqlserver_url:
             try:
-                sqls = SqlServerAdapter(settings.SQL_SERVER_CONNECTION_STRING)
+                sqls = SqlServerAdapter(settings.sqlserver_url)
                 await self.register("sql_server", sqls)
             except Exception as e:
                 logger.error(f"Failed to initialize SQL Server: {e}")
         else:
-            logger.warning("SQL_SERVER_CONNECTION_STRING not configured. SQL Server will not be available.")
+            logger.warning("sqlserver_url not configured. SQL Server will not be available.")
 
     async def register(self, name: str, db: IDatabase) -> None:
         """Register a database connection with a unique name."""

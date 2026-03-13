@@ -8,7 +8,8 @@ blocking the FastAPI event loop.
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator
+from typing import Any
+from contextlib import AbstractAsyncContextManager
 
 import pyodbc
 
@@ -79,7 +80,7 @@ class SqlServerAdapter(IDatabase):
             raise ConnectionError(f"Failed to connect to SQL Server: {e}")
 
     @asynccontextmanager
-    async def transaction(self) -> AsyncGenerator[ITransaction, None]:
+    async def transaction(self) -> AbstractAsyncContextManager[ITransaction]:
         """
         1. Opens a connection (from pyodbc's internal ODBC pool).
         2. Yields the ITransaction interface.

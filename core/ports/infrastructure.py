@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator
+from typing import Any
+from contextlib import AbstractAsyncContextManager
 
 
 class ITransaction(ABC):
@@ -30,7 +31,7 @@ class IDatabase(ABC):
     """
     
     @abstractmethod
-    def transaction(self) -> AsyncGenerator[ITransaction]:
+    def transaction(self) -> AbstractAsyncContextManager[ITransaction]:
         """
         Yields an ITransaction. 
         Automatically handles checkout/checkin to the pool.
