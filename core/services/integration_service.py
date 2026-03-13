@@ -1,4 +1,5 @@
 import polars as pl
+import polars.selectors as cs
 from core.ports.service import IIntegrationService
 from core.ports.repository import ISgaRepository, ISamIntegrationRepository
 from core.helpers.logger_helper import logger
@@ -109,7 +110,7 @@ class IntegrationService(IIntegrationService):
         if not changed_users_df.is_empty():
             # For updates, we can reuse the same upsert_users method as it uses ON DUPLICATE KEY UPDATE
             upsert_count += self.sam_repo.upsert_users(
-                changed_users_df.drop(pl.col("^.*_sam$"))
+                changed_users_df.drop(cs.ends_with("_sam"))
             )
 
         disabled_count = 0
