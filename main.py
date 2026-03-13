@@ -30,6 +30,10 @@ async def lifespan(app: FastAPI):
         logger.info("Database connection established.")
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
+    except NameError as e:
+        logger.error(f"Database manager not defined: {e}")
+    except TypeError as e:
+        logger.error(f"Database manager initialization error: {e}")
     except KeyboardInterrupt:
         await db_manager.shutdown()
         logger.info("Shutdown signal received. Database connection closed.")
