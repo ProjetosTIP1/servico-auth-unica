@@ -6,95 +6,32 @@ Clean Architecture principles. The DatabaseManager acts as an infrastructure
 component that handles the lifecycle of all database connections.
 """
 
+from typing import Dict
 from typing import Any
 
-from dataclasses import dataclass
-
 from core.ports.infrastructure import IDatabase
-from core.infrastructure.mariadb_adapter import MariaDbAdapter
 
-# from core.infrastructure.sqls_adapter import SqlServerAdapter
-from core.config.settings import settings
 from core.helpers.logger_helper import logger
 
 
-@dataclass
-class DatabaseConnections:
-    """Container for all database connections."""
-
-    sql_server: IDatabase | None = None
-    mariadb: IDatabase | None = None
-
-
 class DatabaseManager:
-    """
-    Manages database connection lifecycle.
-
-    This follows SRP by isolating connection management from the FastAPI app,
-    and DIP by depending on the IDatabase interface, not concrete implementations.
-
-    Usage:
-        manager = DatabaseManager()
-        await manager.initialize()
-        # Use manager.sql_server or manager.mariadb
-        await manager.shutdown()
-    """
-
     def __init__(self):
-        self._connections = DatabaseConnections()
-        self._initialized = False
+        self._databases: Dict[str, IDatabase] = {}
 
-    @property
-    def sql_server(self) -> IDatabase | None:
-        """Get SQL Server database connection."""
-        return self._connections.sql_server
-
-    @property
-    def mariadb(self) -> IDatabase | None:
-        """Get MariaDB database connection."""
-        return self._connections.mariadb
-
-    @property
-    def is_initialized(self) -> bool:
-        """Check if the manager has been initialized."""
-        return self._initialized
-
-    async def initialize(self) -> None:
-        """
-        Initialize all database connections.
-
-        Logs errors but continues initialization of other databases.
-        This allows partial functionality if one database is unavailable.
-        """
-        logger.info("Initializing database connections...")
-        errors: list[str] = []
-
-        # SQL Server
-        # try:
-        #     sql_server_db = SqlServerAdapter(settings.sqlserver_url)
-        #     await sql_server_db.execute("SELECT 1")  # Validate connection
-        #     self._connections.sql_server = sql_server_db
-        #     logger.info("SQL Server connection initialized successfully.")
-        # except Exception as e:
-        #     error_msg = f"SQL Server initialization failed: {e}"
-        #     logger.error(error_msg)
-        #     errors.append(error_msg)
-
-        # MariaDB
-        try:
-            mariadb_db = MariaDbAdapter(settings.database_url)
-            await mariadb_db.execute("SELECT 1")  # Validate connection
-            self._connections.mariadb = mariadb_db
-            logger.info("MariaDB connection initialized successfully.")
-        except Exception as e:
-            error_msg = f"MariaDB initialization failed: {e}"
-            logger.error(error_msg)
-            errors.append(error_msg)
-
-        if errors:
-            logger.warning(f"Some database connections failed: {errors}")
-
-        self._initialized = True
+    async def register(self, name: str, db: IDatabase) -> None:
+        """Register a database connection with a unique name."""
+        if name in self._databases:
+            logger.warning(f"Database '{name}' is already registered. Overwriting.")
+        self._databases[name] = db
+        logger.info(f"Database '{name}' registered successfully.")
+    
+    async def get(self, name: str) -> IDatabase:
+        """Retrieve a registered database connection by name."""
+        db = self._databases.get(name)
+        if not db:
+            logger.error(f"Database '{name}' not found.")
+            raise ValueError(f"Database '{name}' not registered.")
+        return db
 
     async def shutdown(self) -> None:
         """
@@ -105,22 +42,16 @@ class DatabaseManager:
         """
         logger.info("Closing database connections...")
 
-        # if self._connections.sql_server:
-        #     try:
-        #         await self._connections.sql_server.disconnect()
-        #         logger.info("SQL Server connection closed.")
-        #     except Exception as e:
-        #         logger.error(f"Error closing SQL Server connection: {e}")
-
-        if self._connections.mariadb:
-            try:
-                await self._connections.mariadb.disconnect()
-                logger.info("MariaDB connection closed.")
-            except Exception as e:
-                logger.error(f"Error closing MariaDB connection: {e}")
-
-        self._connections = DatabaseConnections()
-        self._initialized = False
+        for name, db in self._databases.items():
+            if db:
+                try:
+                    await db.disconnect()
+                    logger.info(f"Database '{name}' connection closed.")
+                except Exception as e:
+                    logger.error(f"Error closing database '{name}' connection: {e}")
+            else:
+                logger.warning(f"Database '{name}' connection is None, skipping.")
+        
         logger.info("All database connections closed.")
 
     async def health_check(self) -> dict[str, Any]:
@@ -136,26 +67,20 @@ class DatabaseManager:
         """
         results: dict[str, Any] = {}
 
-        # SQL Server health check
-        if self._connections.sql_server:
-            try:
-                await self._connections.sql_server.execute("SELECT 1")
-                results["sql_server"] = {"status": "healthy", "connected": True}
-            except Exception as e:
-                results["sql_server"] = {"status": "unhealthy", "error": str(e)}
-        else:
-            results["sql_server"] = {"status": "not_configured", "connected": False}
-
-        # MariaDB health check
-        if self._connections.mariadb:
-            try:
-                await self._connections.mariadb.execute("SELECT 1")
-                results["mariadb"] = {"status": "healthy", "connected": True}
-            except Exception as e:
-                results["mariadb"] = {"status": "unhealthy", "error": str(e)}
-        else:
-            results["mariadb"] = {"status": "not_configured", "connected": False}
-
+        for name, db in self._databases.items():
+            if db:
+                try:
+                    # Perform a simple query to check connectivity
+                    async for txn in db.transaction():
+                        await txn.execute("SELECT 1")
+                        break
+                    results[name] = {"status": "healthy"}
+                except Exception as e:
+                    logger.error(f"Health check failed for database '{name}': {e}")
+                    results[name] = {"status": "unhealthy", "error": str(e)}
+            else:
+                logger.warning(f"Database '{name}' is not configured.")
+                results[name] = {"status": "not_configured"}
         return results
 
 
