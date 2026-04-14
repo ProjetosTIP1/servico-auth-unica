@@ -113,8 +113,7 @@ class DatabaseManager:
         """
         results: dict[str, Any] = {}
 
-        for name in ["mariadb", "sql_server"]:
-            db: IDatabase | None = self._databases.get(name)
+        for name, db in self._databases.items():
             if db:
                 try:
                     # Perform a simple query to check connectivity
