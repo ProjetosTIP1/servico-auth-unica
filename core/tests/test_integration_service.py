@@ -1,7 +1,7 @@
 import pytest
 import polars as pl
 from unittest.mock import MagicMock
-from core.services.integration_service import IntegrationService
+from integration.integration_service import IntegrationService
 from core.ports.repository import ISgaRepository, ISamIntegrationRepository
 
 

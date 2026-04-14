@@ -7,8 +7,7 @@ and asyncio.to_thread() to run synchronous operations without blocking.
 """
 from fastapi.concurrency import asynccontextmanager
 
-from typing import Any
-from contextlib import AbstractAsyncContextManager
+from typing import Any, AsyncGenerator
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncConnection
 from sqlalchemy import text
@@ -75,7 +74,7 @@ class MariaDbAdapter(IDatabase):
             )
 
     @asynccontextmanager
-    async def transaction(self) -> AbstractAsyncContextManager[ITransaction]:
+    async def transaction(self) -> AsyncGenerator[ITransaction, None]:
         """
         The magic happens here. 
         1. Borrows a connection from the pool.

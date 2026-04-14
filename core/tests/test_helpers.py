@@ -36,6 +36,7 @@ class TestAuthenticationHelper:
 
         # Assert
         assert token is not None
+        assert decoded_payload is not None
         assert decoded_payload["sub"] == "12345678901"
         assert decoded_payload["name"] == "Test User"
         assert decoded_payload["type"] == "access"

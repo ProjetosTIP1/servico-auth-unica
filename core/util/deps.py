@@ -41,7 +41,7 @@ from core.ports.service import IMicrosoftAuthService
 from core.services.microsoft_login_service import MicrosoftLoginService
 from core.services.token_service import TokenService as TokenServiceImpl
 from core.services.user_service import UserService as UserServiceImpl
-from core.services.integration_service import IntegrationService
+from integration.integration_service import IntegrationService
 
 # ── Bearer token extractor ─────────────────────────────────────────────────────
 _bearer_scheme = HTTPBearer(auto_error=False)
@@ -111,9 +111,7 @@ def get_token_service(
 ) -> TokenServiceImpl:
     """Provide a fully wired `TokenService` to the route handler."""
     return TokenServiceImpl(
-        token_repository=token_repository,
-        user_repository=user_repository,
-        db=mariadb
+        token_repository=token_repository, user_repository=user_repository, db=mariadb
     )
 
 

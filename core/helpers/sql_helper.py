@@ -5,7 +5,7 @@ def filter_valid_update_clauses(data: dict, id: int) -> tuple[str, dict]:
     return set_clause, params
 
 
-def filter_valid_insert_clauses(data: dict) -> tuple[str, dict]:
+def filter_valid_insert_clauses(data: dict) -> tuple[str, str]:
     """Filter valid insert clauses"""
     columns = ", ".join(data.keys())
     placeholders = ", ".join(f":{col}" for col in data)
