@@ -10,3 +10,5 @@ wheels/
 .venv
 /core/config/.env
 /playground.py
+.env
+GEMINI.md
