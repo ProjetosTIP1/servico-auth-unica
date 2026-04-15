@@ -8,7 +8,9 @@ from core.helpers.sql_helper import filter_valid_update_clauses
 
 
 class UserRepository(IUserRepository):
-    async def get_user_by_cpfcnpj(self, txn: ITransaction, cpfcnpj: str) -> UserType | None:
+    async def get_user_by_cpfcnpj(
+        self, txn: ITransaction, cpfcnpj: str
+    ) -> UserType | None:
         """Get user by CPF/CNPJ"""
         try:
             query = """
@@ -56,7 +58,9 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by email: {e}")
 
-    async def get_user_by_ms_oid(self, txn: ITransaction, ms_oid: str) -> UserType | None:
+    async def get_user_by_ms_oid(
+        self, txn: ITransaction, ms_oid: str
+    ) -> UserType | None:
         """Get user by Microsoft object ID"""
         try:
             query = """
@@ -72,7 +76,9 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error fetching user by MS OID: {e}")
 
-    async def search_users_by_name(self, txn: ITransaction, name_query: str) -> List[UserType]:
+    async def search_users_by_name(
+        self, txn: ITransaction, name_query: str
+    ) -> List[UserType]:
         """Search users by name (partial match)"""
         try:
             query = """
@@ -80,14 +86,14 @@ class UserRepository(IUserRepository):
             FROM users 
             WHERE (full_name LIKE :name_query OR first_name LIKE :name_query OR last_name LIKE :name_query) AND is_active = 1
             """
-            results = await txn.execute(
-                query, {"name_query": f"%{name_query}%"}
-            )
+            results = await txn.execute(query, {"name_query": f"%{name_query}%"})
             return [UserType(**data) for data in results]
         except Exception as e:
             raise Exception(f"Error searching users by name: {e}")
 
-    async def get_user_hashed_password(self, txn: ITransaction, email: str) -> str | None:
+    async def get_user_hashed_password(
+        self, txn: ITransaction, email: str
+    ) -> str | None:
         """Get the hashed password for a user by email"""
         try:
             query = """
@@ -129,7 +135,7 @@ class UserRepository(IUserRepository):
             await txn.execute(
                 query, {**user_data.model_dump(), "hashed_password": hashed_password}
             )
-            
+
             # Use the same transaction to get the user back
             # We use get_user_by_cpfcnpj as it's unique
             new_user: UserType | None = await self.get_user_by_cpfcnpj(
@@ -154,7 +160,9 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error listing users: {e}")
 
-    async def update_user(self, txn: ITransaction, user_id: int, user_data: UserUpdateType) -> UserType:
+    async def update_user(
+        self, txn: ITransaction, user_id: int, user_data: UserUpdateType
+    ) -> UserType:
         """Partially update a user — only columns that were explicitly set are touched."""
         try:
             fields = user_data.model_dump(exclude_unset=True)
@@ -179,7 +187,9 @@ class UserRepository(IUserRepository):
         except Exception as e:
             raise Exception(f"Error updating user: {e}")
 
-    async def update_user_password(self, txn: ITransaction, user_id: int, hashed_password: str) -> None:
+    async def update_user_password(
+        self, txn: ITransaction, user_id: int, hashed_password: str
+    ) -> None:
         """Update the password of an existing user"""
         try:
             query = """

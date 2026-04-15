@@ -22,12 +22,16 @@ class ITokenRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_last_refresh_token(self, txn: ITransaction, user_id: str) -> TokenModel:
+    async def get_last_refresh_token(
+        self, txn: ITransaction, user_id: str
+    ) -> TokenModel:
         """Retrieve the last refresh token for the given user ID."""
         pass
 
     @abstractmethod
-    async def get_token_by_string(self, txn: ITransaction, token: str) -> TokenModel | None:
+    async def get_token_by_string(
+        self, txn: ITransaction, token: str
+    ) -> TokenModel | None:
         """Retrieve a token by its string value."""
         pass
 
@@ -51,7 +55,9 @@ class IUserRepository(ABC):
     """Abstract interface for user repository operations"""
 
     @abstractmethod
-    async def get_user_by_cpfcnpj(self, txn: ITransaction, cpfcnpj: str) -> UserType | None:
+    async def get_user_by_cpfcnpj(
+        self, txn: ITransaction, cpfcnpj: str
+    ) -> UserType | None:
         """Get user by CPF/CNPJ"""
         pass
 
@@ -66,7 +72,9 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_user_by_ms_oid(self, txn: ITransaction, ms_oid: str) -> UserType | None:
+    async def get_user_by_ms_oid(
+        self, txn: ITransaction, ms_oid: str
+    ) -> UserType | None:
         """Get user by Microsoft object ID"""
         pass
 
@@ -78,7 +86,9 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_user_hashed_password(self, txn: ITransaction, email: str) -> str | None:
+    async def get_user_hashed_password(
+        self, txn: ITransaction, email: str
+    ) -> str | None:
         """Get the hashed password for a user by email"""
         pass
 

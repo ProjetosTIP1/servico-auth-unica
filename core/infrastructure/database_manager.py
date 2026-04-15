@@ -49,7 +49,9 @@ class DatabaseManager:
             except Exception as e:
                 logger.error(f"Failed to initialize MariaDB: {e}")
         else:
-            logger.warning("database_url not configured. MariaDB will not be available.")
+            logger.warning(
+                "database_url not configured. MariaDB will not be available."
+            )
 
         # Initialize SQL Server
         sqlserver_url: str = settings.sqlserver_url
@@ -60,7 +62,9 @@ class DatabaseManager:
             except Exception as e:
                 logger.error(f"Failed to initialize SQL Server: {e}")
         else:
-            logger.warning("sqlserver_url not configured. SQL Server will not be available.")
+            logger.warning(
+                "sqlserver_url not configured. SQL Server will not be available."
+            )
 
     async def register(self, name: str, db: IDatabase) -> None:
         """Register a database connection with a unique name."""
@@ -68,7 +72,7 @@ class DatabaseManager:
             logger.warning(f"Database '{name}' is already registered. Overwriting.")
         self._databases[name] = db
         logger.info(f"Database '{name}' registered successfully.")
-    
+
     async def get(self, name: str) -> IDatabase:
         """Retrieve a registered database connection by name."""
         db: IDatabase | None = self._databases.get(name)
@@ -96,7 +100,7 @@ class DatabaseManager:
                     logger.error(f"Error closing database '{name}' connection: {e}")
             else:
                 logger.warning(f"Database '{name}' connection is None, skipping.")
-        
+
         self._databases.clear()
         logger.info("All database connections closed.")
 

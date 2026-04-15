@@ -14,6 +14,7 @@ Microsserviço centralizado de autenticação construído com **FastAPI**, respo
 - [Banco de Dados](#banco-de-dados)
 - [Executando o Projeto](#executando-o-projeto)
 - [Endpoints da API](#endpoints-da-api)
+- [Integração SGA ↔ SAM](#integração-sga--sam)
 - [Fluxos de Autenticação](#fluxos-de-autenticação)
   - [Fluxo 1 — Login com e-mail e senha](#fluxo-1--login-com-e-mail-e-senha)
   - [Fluxo 2 — Login via Microsoft (MSAL)](#fluxo-2--login-via-microsoft-msal)
@@ -268,6 +269,51 @@ ruff format .
 | `PATCH` | `/users/{user_id}` | JWT | Gerente |
 | `PATCH` | `/users/{user_id}/password` | JWT | Gerente |
 | `DELETE` | `/users/{user_id}` | JWT | Gerente |
+
+### Integração SGA (`/integration`)
+
+| Método | Rota | Autenticação | Parâmetros | Descrição |
+|---|---|---|---|---|
+| `POST` | `/integration/sync-all` | Pública* | `dry_run` (bool) | Executa a sincronização completa (usuários e metadados). |
+| `POST` | `/integration/sync-users` | Pública* | `dry_run` (bool) | Sincroniza apenas usuários. |
+| `POST` | `/integration/sync-metadata` | Pública* | `dry_run` (bool) | Sincroniza apenas metadados (Departamentos e Cargos). |
+
+> \* **Nota:** Atualmente os endpoints de integração são públicos para facilitar chamadas de tarefas agendadas internas. Recomenda-se restringir o acesso via firewall ou rede interna.
+
+---
+
+## Integração SGA ↔ SAM
+
+O sistema possui um motor de integração de alta performance baseado em **Polars** que sincroniza os dados do sistema legado (SGA - SQL Server) com o SAM (MariaDB).
+
+### Funcionamento do Processo
+O processo de sincronização segue o padrão ETL:
+1.  **Extração:** Busca usuários em massa do SQL Server.
+2.  **Transformação:** Normaliza usernames, detecta novos usuários, mudanças em cargos/unidades e identifica usuários que devem ser desativados.
+3.  **Carga (Load):** Realiza upserts em lote no MariaDB para máxima eficiência.
+
+### Execução via Host Task (Agendamento)
+
+Para manter os dados sincronizados automaticamente, você pode configurar uma tarefa no host (servidor) que chama o endpoint de sincronização em intervalos regulares.
+
+#### Linux (Cronjob)
+Adicione uma entrada ao `crontab` para executar a sincronização toda madrugada às 02:00:
+```bash
+0 2 * * * curl -X POST "http://localhost:8000/integration/sync-all?dry_run=false"
+```
+
+#### Windows (Task Scheduler)
+Crie uma tarefa agendada que execute um comando PowerShell:
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/integration/sync-all?dry_run=false"
+```
+
+#### Execução Manual (Dry Run)
+Antes de aplicar mudanças reais, você pode testar o que será alterado usando o parâmetro `dry_run=true`:
+```bash
+curl -X POST "http://localhost:8000/integration/sync-all?dry_run=true"
+```
+O resultado será exibido nos logs da aplicação detalhando a quantidade de registros que seriam afetados.
 
 ---
 

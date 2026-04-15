@@ -12,8 +12,8 @@ class IntegrationService(IIntegrationService):
     """
 
     def __init__(self, sga_repo: ISgaRepository, sam_repo: ISamIntegrationRepository):
-        self.sga_repo = sga_repo
-        self.sam_repo = sam_repo
+        self.sga_repo: ISgaRepository = sga_repo
+        self.sam_repo: ISamIntegrationRepository = sam_repo
 
     async def sync_all(self, dry_run: bool = False):
         logger.info("Starting full synchronization...")
@@ -26,7 +26,22 @@ class IntegrationService(IIntegrationService):
 
         # 1. Extraction (E)
         sga_users_df = self.sga_repo.get_users_df()
+        logger.debug(f"Found {sga_users_df.height} users in SGA.")
         sam_users_df = self.sam_repo.get_current_users_df()
+        logger.debug(f"Found {sam_users_df.height} users in SAM.")
+
+        # Defensive casting: ensure comparison columns are strings
+        comparison_cols = ["nome_completo", "cargo", "departamento", "unidade"]
+        
+        if not sga_users_df.is_empty():
+            sga_users_df = sga_users_df.with_columns([
+                pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols
+            ])
+        
+        if not sam_users_df.is_empty():
+            sam_users_df = sam_users_df.with_columns([
+                pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols
+            ])
 
         # 2. Transformation (T)
         if not sga_users_df.is_empty():
@@ -51,21 +66,34 @@ class IntegrationService(IIntegrationService):
             changed_users_df = common_users_df.filter(
                 (pl.col("nome_completo") != pl.col("nome_completo_sam"))
                 | (pl.col("cargo") != pl.col("cargo_sam"))
-                | (pl.col("Departamento") != pl.col("Departamento_sam"))
-                | (pl.col("UNIDADE") != pl.col("UNIDADE_sam"))
+                | (pl.col("departamento") != pl.col("departamento_sam"))
+                | (pl.col("unidade") != pl.col("unidade_sam"))
             )
 
-            # Process new users: generate password
+            # Process new users: generate password, cpf_cnpj and split name
             if not new_users_df.is_empty():
                 logger.info(f"Detected {new_users_df.height} new users.")
                 # Map default password: first 6 chars of username + @@ (legacy pattern)
+                # Set first_name and last_name from nome_completo
                 new_users_df = new_users_df.with_columns(
                     pl.col("username")
                     .str.slice(0, 6)
                     .map_elements(
                         lambda x: get_password_hash(f"{x}@@"), return_dtype=pl.String
                     )
-                    .alias("password")
+                    .alias("password"),
+                    pl.col("nome_completo")
+                    .str.split(" ")
+                    .map_elements(lambda x: x[0], return_dtype=pl.String)
+                    .alias("first_name"),
+                    pl.col("nome_completo")
+                    .str.split(" ")
+                    .map_elements(lambda x: " ".join(x[1:]), return_dtype=pl.String)
+                    .alias("last_name"),
+                    pl.col("username")
+                    .str.replace_all(r"[\./-]", "")
+                    .str.strip_chars()
+                    .alias("cpf_cnpj"),
                 )
         else:
             logger.warning(

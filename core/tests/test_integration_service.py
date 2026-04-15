@@ -26,9 +26,9 @@ def sam_schema():
         "username": pl.String,
         "nome_completo": pl.String,
         "is_active": pl.Int64,
-        "UNIDADE": pl.String,
+        "unidade": pl.String,
         "cargo": pl.String,
-        "Departamento": pl.String,
+        "departamento": pl.String,
     }
 
 
@@ -42,8 +42,8 @@ async def test_sync_users_new_user_detection(
             "username": ["123.456.789-00"],  # Needs cleaning
             "nome_completo": ["New User"],
             "cargo": ["Dev"],
-            "Departamento": ["IT"],
-            "UNIDADE": ["UnitA"],
+            "departamento": ["IT"],
+            "unidade": ["UnitA"],
         }
     )
     sam_df = pl.DataFrame(schema=sam_schema)
@@ -74,8 +74,8 @@ async def test_sync_users_update_detection(
             "username": ["admin"],
             "nome_completo": ["Admin Updated"],
             "cargo": ["Dev"],
-            "Departamento": ["IT"],
-            "UNIDADE": ["UnitA"],
+            "departamento": ["IT"],
+            "unidade": ["UnitA"],
         }
     )
     sam_df = pl.DataFrame(
@@ -83,9 +83,9 @@ async def test_sync_users_update_detection(
             "username": ["admin"],
             "nome_completo": ["Admin Old"],
             "is_active": [1],
-            "UNIDADE": ["UnitA"],
+            "unidade": ["UnitA"],
             "cargo": ["Dev"],
-            "Departamento": ["IT"],
+            "departamento": ["IT"],
         }
     )
 
@@ -120,9 +120,9 @@ async def test_sync_users_disabled_detection(
             "username": ["former_employee"],
             "nome_completo": ["Old User"],
             "is_active": [1],  # Currently active
-            "UNIDADE": ["UnitA"],
+            "unidade": ["UnitA"],
             "cargo": ["Dev"],
-            "Departamento": ["IT"],
+            "departamento": ["IT"],
         }
     )
 
@@ -147,8 +147,8 @@ async def test_sync_users_dry_run(
             "username": ["new"],
             "nome_completo": ["New"],
             "cargo": ["X"],
-            "Departamento": ["Y"],
-            "UNIDADE": ["Z"],
+            "departamento": ["Y"],
+            "unidade": ["Z"],
         }
     )
     mock_sga_repo.get_users_df.return_value = sga_df

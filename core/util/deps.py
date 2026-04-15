@@ -145,10 +145,21 @@ def get_sam_integration_repository() -> ISamIntegrationRepository:
     return SamIntegrationAdapter()
 
 
+def provide_integration_service() -> IIntegrationService:
+    """Standalone provider for scripts and cronjobs."""
+    return IntegrationService(
+        sga_repo=get_sga_repository(),
+        sam_repo=get_sam_integration_repository(),
+    )
+
+
 def get_integration_service(
-    sga_repo: ISgaRepository = Depends(get_sga_repository),
-    sam_repo: ISamIntegrationRepository = Depends(get_sam_integration_repository),
+    sga_repo: Annotated[ISgaRepository, Depends(get_sga_repository)],
+    sam_repo: Annotated[
+        ISamIntegrationRepository, Depends(get_sam_integration_repository)
+    ],
 ) -> IIntegrationService:
+    """FastAPI provider."""
     return IntegrationService(sga_repo=sga_repo, sam_repo=sam_repo)
 
 

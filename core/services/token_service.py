@@ -29,7 +29,10 @@ from core.config.settings import settings
 
 class TokenService(ITokenService):
     def __init__(
-        self, token_repository: ITokenRepository, user_repository: IUserRepository, db: IDatabase
+        self,
+        token_repository: ITokenRepository,
+        user_repository: IUserRepository,
+        db: IDatabase,
     ):
         self.token_repository: ITokenRepository = token_repository
         self.user_repository: IUserRepository = user_repository
@@ -93,7 +96,7 @@ class TokenService(ITokenService):
                         expires_at=datetime.now(timezone.utc)
                         + self._get_time_to_expire(TokenType.ACCESS),
                         type=TokenType.ACCESS,
-                    )
+                    ),
                 )
 
             return access_token
@@ -122,7 +125,7 @@ class TokenService(ITokenService):
                         expires_at=datetime.now(timezone.utc)
                         + self._get_time_to_expire(TokenType.REFRESH),
                         type=TokenType.REFRESH,
-                    )
+                    ),
                 )
 
             return refresh_token_str
@@ -157,59 +160,59 @@ class TokenService(ITokenService):
                 # but we could also refactor them to accept a txn.
                 # However, for now let's keep it simple or wrap the whole thing.
                 # Actually, better wrap the whole thing if we can.
-            
+
             # Refactoring to use a single transaction for the whole operation
             async with self.db.transaction() as txn:
-                 user = await self.user_repository.get_user_by_id(txn, token.user_id)
-                 if not user:
-                     raise UserNotFoundException("User not found")
-                 
-                 new_refresh_token_str = create_jwt_token(
-                     data={"sub": str(user.cpf_cnpj)},
-                     expires_delta=self._get_time_to_expire(TokenType.REFRESH),
-                     token_type="refresh",
-                 )
+                user = await self.user_repository.get_user_by_id(txn, token.user_id)
+                if not user:
+                    raise UserNotFoundException("User not found")
 
-                 await self.token_repository.create_refresh_token(
-                     txn,
-                     TokenCreateModel(
-                         user_id=user.id,
-                         token=new_refresh_token_str,
-                         parent_token=refresh_token,
-                         expires_at=datetime.now(timezone.utc)
-                         + self._get_time_to_expire(TokenType.REFRESH),
-                         type=TokenType.REFRESH,
-                     )
-                 )
+                new_refresh_token_str = create_jwt_token(
+                    data={"sub": str(user.cpf_cnpj)},
+                    expires_delta=self._get_time_to_expire(TokenType.REFRESH),
+                    token_type="refresh",
+                )
 
-                 new_access_token_str = create_jwt_token(
-                     data={"sub": user.cpf_cnpj},
-                     expires_delta=self._get_time_to_expire(TokenType.ACCESS),
-                     token_type="access",
-                 )
+                await self.token_repository.create_refresh_token(
+                    txn,
+                    TokenCreateModel(
+                        user_id=user.id,
+                        token=new_refresh_token_str,
+                        parent_token=refresh_token,
+                        expires_at=datetime.now(timezone.utc)
+                        + self._get_time_to_expire(TokenType.REFRESH),
+                        type=TokenType.REFRESH,
+                    ),
+                )
 
-                 await self.token_repository.create_access_token(
-                     txn,
-                     TokenCreateModel(
-                         user_id=user.id,
-                         token=new_access_token_str,
-                         parent_token=new_refresh_token_str,
-                         expires_at=datetime.now(timezone.utc)
-                         + self._get_time_to_expire(TokenType.ACCESS),
-                         type=TokenType.ACCESS,
-                     )
-                 )
+                new_access_token_str = create_jwt_token(
+                    data={"sub": user.cpf_cnpj},
+                    expires_delta=self._get_time_to_expire(TokenType.ACCESS),
+                    token_type="access",
+                )
 
-                 # Revoke the old tokens
-                 await self.token_repository.revoke_token(txn, access_token)
-                 await self.token_repository.revoke_token(txn, refresh_token)
+                await self.token_repository.create_access_token(
+                    txn,
+                    TokenCreateModel(
+                        user_id=user.id,
+                        token=new_access_token_str,
+                        parent_token=new_refresh_token_str,
+                        expires_at=datetime.now(timezone.utc)
+                        + self._get_time_to_expire(TokenType.ACCESS),
+                        type=TokenType.ACCESS,
+                    ),
+                )
 
-                 return TokenResponseModel(
-                     access_token=new_access_token_str,
-                     refresh_token=new_refresh_token_str,
-                     expires_in=datetime.now(timezone.utc)
-                     + self._get_time_to_expire(TokenType.ACCESS),
-                 )
+                # Revoke the old tokens
+                await self.token_repository.revoke_token(txn, access_token)
+                await self.token_repository.revoke_token(txn, refresh_token)
+
+                return TokenResponseModel(
+                    access_token=new_access_token_str,
+                    refresh_token=new_refresh_token_str,
+                    expires_in=datetime.now(timezone.utc)
+                    + self._get_time_to_expire(TokenType.ACCESS),
+                )
         except Exception as e:
             logger.error(
                 message=f"Error creating token pair: {e}",
@@ -317,7 +320,9 @@ class TokenService(ITokenService):
                 hashed_password: (
                     str | None
                 ) = await self.user_repository.get_user_hashed_password(txn, user.email)
-                if not hashed_password or not verify_password(password, hashed_password):
+                if not hashed_password or not verify_password(
+                    password, hashed_password
+                ):
                     raise InvalidCredentialsException()
 
                 refresh_token_str = create_jwt_token(
@@ -335,7 +340,7 @@ class TokenService(ITokenService):
                         expires_at=datetime.now(timezone.utc)
                         + self._get_time_to_expire(TokenType.REFRESH),
                         type=TokenType.REFRESH,
-                    )
+                    ),
                 )
 
                 access_token_str = create_jwt_token(
@@ -353,7 +358,7 @@ class TokenService(ITokenService):
                         expires_at=datetime.now(timezone.utc)
                         + self._get_time_to_expire(TokenType.ACCESS),
                         type=TokenType.ACCESS,
-                    )
+                    ),
                 )
 
                 return TokenResponseModel(
@@ -372,7 +377,9 @@ class TokenService(ITokenService):
     async def validate_access_token(self, token: str) -> bool:
         try:
             async with self.db.transaction() as txn:
-                token_model = await self.token_repository.get_token_by_string(txn, token)
+                token_model = await self.token_repository.get_token_by_string(
+                    txn, token
+                )
                 if not token_model:
                     raise TokenRevokedException("Token not found")
                 if token_model.type != TokenType.ACCESS:

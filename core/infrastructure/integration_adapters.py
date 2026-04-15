@@ -16,15 +16,18 @@ class SgaPolarsAdapter(ISgaRepository):
         user = quote_plus(settings.SQLSERVER_USER)
         password = quote_plus(settings.SQLSERVER_PASSWORD)
         driver = quote_plus(settings.SQLSERVER_DRIVER)
+        encrypt = quote_plus(settings.SQLSERVER_ENCRYPT)
+        trust_cert = quote_plus(settings.SQLSERVER_TRUST_SERVER_CERTIFICATE)
         self.connection_url = (
             f"mssql+pyodbc://{user}:{password}@{settings.SQLSERVER_HOST}:{settings.SQLSERVER_PORT}/"
-            f"{settings.SQLSERVER_DB}?driver={driver}&TrustServerCertificate={settings.SQLSERVER_TRUST_SERVER_CERTIFICATE}"
+            f"{settings.SQLSERVER_DB}?driver={driver}&Encrypt={encrypt}&TrustServerCertificate={trust_cert}"
         )
         self._engine = create_engine(self.connection_url)
 
     def _read_sql(self, sql: str) -> pl.DataFrame:
         try:
-            return pl.read_database(query=sql, connection=self._engine)
+            with self._engine.connect() as conn:
+                return pl.read_database(query=sql, connection=conn)
         except Exception as e:
             logger.error(f"Error reading from SGA: {e}")
             return pl.DataFrame()
@@ -52,8 +55,8 @@ class SgaPolarsAdapter(ISgaRepository):
             concat(
                 CASE WHEN COPFIL = 0 THEN EMPSIGLA ELSE FILSIGLA END, '-', CA.CODIGO
             ) as cargo,
-            d.codigo as Departamento,
-            IIF(FILSIGLA IS NULL, EMPSIGLA, FILSIGLA) AS UNIDADE
+            d.codigo as departamento,
+            IIF(FILSIGLA IS NULL, EMPSIGLA, FILSIGLA) AS unidade
         FROM UltimoCadastro UC
         INNER JOIN ContratoDetalhe C ON UC.FORCOD = C.COPFOR
         JOIN RH_LOTACAO L ON L.PPREF = COPCOD AND INICIO = (SELECT MAX(INICIO) FROM RH_LOTACAO WHERE PPREF = C.COPCOD)
@@ -129,16 +132,17 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
     """
 
     def __init__(self):
-        self.connection_url = settings.database_url
+        self.connection_url = settings.database_sync_url
         self._engine = create_engine(self.connection_url)
 
     def get_current_users_df(self) -> pl.DataFrame:
         sql = """
-        SELECT username, full_name as nome_completo, is_active, unit as UNIDADE, job as cargo, branche as Departamento
+        SELECT username, full_name as nome_completo, is_active, unit as unidade, job as cargo, branche as departamento
         FROM users
         """
         try:
-            return pl.read_database(query=sql, connection=self._engine)
+            with self._engine.connect() as conn:
+                return pl.read_database(query=sql, connection=conn)
         except Exception as e:
             logger.error(f"Error reading current users from SAM: {e}")
             return pl.DataFrame()
@@ -148,7 +152,8 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         # In legacy it was 'valeflow_unidades'
         sql = "SELECT ID, SIGLA FROM units WHERE active = 1"
         try:
-            return pl.read_database(query=sql, connection=self._engine)
+            with self._engine.connect() as conn:
+                return pl.read_database(query=sql, connection=conn)
         except Exception as e:
             logger.error(f"Error reading units from SAM: {e}")
             return pl.DataFrame()
@@ -157,7 +162,8 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         # Assuming a positions table
         sql = "SELECT id, code FROM positions"
         try:
-            return pl.read_database(query=sql, connection=self._engine)
+            with self._engine.connect() as conn:
+                return pl.read_database(query=sql, connection=conn)
         except Exception as e:
             logger.error(f"Error reading positions from SAM: {e}")
             return pl.DataFrame()
@@ -211,10 +217,13 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
             for row in df.to_dicts():
                 # SAM Schema columns: username, email, full_name, unit, job, branche, is_active, hashed_password
                 stmt = text("""
-                    INSERT INTO users (username, full_name, email, unit, job, branche, is_active, hashed_password, created_at, updated_at)
-                    VALUES (:username, :full_name, :email, :unit, :job, :branche, :is_active, :hashed_password, NOW(), NOW())
+                    INSERT INTO users (username, full_name, first_name, last_name, cpf_cnpj, email, unit, job, branche, is_active, hashed_password, created_at, updated_at)
+                    VALUES (:username, :full_name, :first_name, :last_name, :cpf_cnpj, :email, :unit, :job, :branche, :is_active, :hashed_password, NOW(), NOW())
                     ON DUPLICATE KEY UPDATE 
                         full_name = VALUES(full_name),
+                        first_name = VALUES(first_name),
+                        last_name = VALUES(last_name),
+                        cpf_cnpj = VALUES(cpf_cnpj),
                         email = VALUES(email),
                         unit = VALUES(unit),
                         job = VALUES(job),
@@ -227,10 +236,13 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
                     {
                         "username": row["username"],
                         "full_name": row["nome_completo"],
+                        "first_name": row["first_name"],
+                        "last_name": row["last_name"],
+                        "cpf_cnpj": row["cpf_cnpj"],
                         "email": row.get("email"),
-                        "unit": row.get("UNIDADE"),
+                        "unit": row.get("unidade"),
                         "job": row.get("cargo"),
-                        "branche": row.get("Departamento"),
+                        "branche": row.get("departamento"),
                         "is_active": row.get("is_active", 1),
                         "hashed_password": row.get("password", "NOT_SET"),
                     },

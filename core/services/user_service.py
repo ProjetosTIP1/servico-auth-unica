@@ -31,7 +31,9 @@ class UserService(IUserService):
     async def get_user_by_email(self, email: str) -> UserType:
         try:
             async with self.db.transaction() as txn:
-                user: UserType | None = await self.user_repository.get_user_by_email(txn, email)
+                user: UserType | None = await self.user_repository.get_user_by_email(
+                    txn, email
+                )
                 if not user:
                     raise ValueError("User not found")
                 return user
@@ -41,7 +43,9 @@ class UserService(IUserService):
     async def get_user_by_id(self, user_id: int) -> UserType:
         try:
             async with self.db.transaction() as txn:
-                user: UserType | None = await self.user_repository.get_user_by_id(txn, user_id)
+                user: UserType | None = await self.user_repository.get_user_by_id(
+                    txn, user_id
+                )
                 if not user:
                     raise ValueError("User not found")
                 return user
@@ -71,18 +75,20 @@ class UserService(IUserService):
                 # Safe checks for existing user by CPF/CNPJ and email to prevent duplicates
                 cpf_cnpj_user: (
                     UserType | None
-                ) = await self.user_repository.get_user_by_cpfcnpj(txn, verified.cpf_cnpj)
+                ) = await self.user_repository.get_user_by_cpfcnpj(
+                    txn, verified.cpf_cnpj
+                )
                 if cpf_cnpj_user:
                     raise ValueError("User already exists")
-                email_user: UserType | None = await self.user_repository.get_user_by_email(
-                    txn, verified.email
-                )
+                email_user: (
+                    UserType | None
+                ) = await self.user_repository.get_user_by_email(txn, verified.email)
                 if email_user:
                     raise ValueError("User already exists")
-                
+
                 if not verified.password:
                     raise ValueError("Password is required")
-                
+
                 hashed_password: str = get_password_hash(verified.password)
                 user: UserType = await self.user_repository.create_user(
                     txn, verified, hashed_password
@@ -102,26 +108,32 @@ class UserService(IUserService):
     async def update_user(self, user_id: int, user_data: UserUpdateType) -> UserType:
         try:
             async with self.db.transaction() as txn:
-                user: UserType | None = await self.user_repository.get_user_by_id(txn, user_id)
+                user: UserType | None = await self.user_repository.get_user_by_id(
+                    txn, user_id
+                )
                 if not user:
                     raise ValueError("User not found")
-                
+
                 verified: UserUpdateType = UserUpdateType.model_validate(user_data)
-                
+
                 if verified.cpf_cnpj and verified.cpf_cnpj != user.cpf_cnpj:
                     existing_user: (
                         UserType | None
-                    ) = await self.user_repository.get_user_by_cpfcnpj(txn, verified.cpf_cnpj)
+                    ) = await self.user_repository.get_user_by_cpfcnpj(
+                        txn, verified.cpf_cnpj
+                    )
                     if existing_user:
                         raise ValueError("CPF/CNPJ already exists")
-                
+
                 if verified.email and verified.email != user.email:
                     existing_user: (
                         UserType | None
-                    ) = await self.user_repository.get_user_by_email(txn, verified.email)
+                    ) = await self.user_repository.get_user_by_email(
+                        txn, verified.email
+                    )
                     if existing_user:
                         raise ValueError("Email already exists")
-                
+
                 updated_user: UserType = await self.user_repository.update_user(
                     txn, user_id, verified
                 )
@@ -134,23 +146,30 @@ class UserService(IUserService):
     ) -> None:
         try:
             async with self.db.transaction() as txn:
-                user: UserType | None = await self.user_repository.get_user_by_id(txn, user_id)
+                user: UserType | None = await self.user_repository.get_user_by_id(
+                    txn, user_id
+                )
                 if not user:
                     raise ValueError("User not found")
-                
-                if not passwords_data.new_password or not passwords_data.current_password:
+
+                if (
+                    not passwords_data.new_password
+                    or not passwords_data.current_password
+                ):
                     raise ValueError("New password and current password are required")
-                
+
                 hashed_password: (
                     str | None
                 ) = await self.user_repository.get_user_hashed_password(txn, user.email)
-                
+
                 if not hashed_password or not verify_password(
                     passwords_data.current_password, hashed_password
                 ):
                     raise ValueError("Current password is incorrect")
-                
-                hashed_new_password: str = get_password_hash(passwords_data.new_password)
+
+                hashed_new_password: str = get_password_hash(
+                    passwords_data.new_password
+                )
                 await self.user_repository.update_user_password(
                     txn, user.id, hashed_new_password
                 )
@@ -188,7 +207,9 @@ class UserService(IUserService):
     async def delete_user(self, user_id: int) -> None:
         try:
             async with self.db.transaction() as txn:
-                user: UserType | None = await self.user_repository.get_user_by_id(txn, user_id)
+                user: UserType | None = await self.user_repository.get_user_by_id(
+                    txn, user_id
+                )
                 if not user:
                     raise ValueError("User not found")
                 await self.user_repository.delete_user(txn, user_id)
