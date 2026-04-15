@@ -5,6 +5,7 @@ from core.util.deps import get_integration_service
 router = APIRouter(prefix="/integration", tags=["Integration"])
 
 
+# TODO: change this to an SSE endpoint
 @router.post("/sync-all", status_code=status.HTTP_200_OK)
 async def sync_all(
     dry_run: bool = False,
@@ -27,6 +28,7 @@ async def sync_all(
         )
 
 
+# TODO: change this to an SSE endpoint
 @router.post("/sync-users", status_code=status.HTTP_200_OK)
 async def sync_users(
     dry_run: bool = False,
@@ -48,6 +50,7 @@ async def sync_users(
         )
 
 
+# TODO: change this to an SSE endpoint
 @router.post("/sync-metadata", status_code=status.HTTP_200_OK)
 async def sync_metadata(
     dry_run: bool = False,
