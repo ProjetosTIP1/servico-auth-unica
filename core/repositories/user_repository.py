@@ -92,16 +92,16 @@ class UserRepository(IUserRepository):
             raise Exception(f"Error searching users by name: {e}")
 
     async def get_user_hashed_password(
-        self, txn: ITransaction, email: str
+        self, txn: ITransaction, cpfcnpj: str
     ) -> str | None:
-        """Get the hashed password for a user by email"""
+        """Get the hashed password for a user by CPF/CNPJ"""
         try:
             query = """
             SELECT hashed_password 
             FROM users 
-            WHERE email = :email AND is_active = 1
+            WHERE cpf_cnpj = :cpf_cnpj AND is_active = 1
             """
-            results = await txn.execute(query, {"email": email})
+            results = await txn.execute(query, {"cpf_cnpj": cpfcnpj})
             if results:
                 return results[0]["hashed_password"]
             return None
