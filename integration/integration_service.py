@@ -30,6 +30,19 @@ class IntegrationService(IIntegrationService):
         sam_users_df = self.sam_repo.get_current_users_df()
         logger.debug(f"Found {sam_users_df.height} users in SAM.")
 
+        # Defensive casting: ensure comparison columns are strings
+        comparison_cols = ["nome_completo", "cargo", "departamento", "unidade"]
+        
+        if not sga_users_df.is_empty():
+            sga_users_df = sga_users_df.with_columns([
+                pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols
+            ])
+        
+        if not sam_users_df.is_empty():
+            sam_users_df = sam_users_df.with_columns([
+                pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols
+            ])
+
         # 2. Transformation (T)
         if not sga_users_df.is_empty():
             # Clean usernames: remove . / - and spaces, then deduplicate
