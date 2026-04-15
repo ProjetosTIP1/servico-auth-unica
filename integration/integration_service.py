@@ -26,7 +26,9 @@ class IntegrationService(IIntegrationService):
 
         # 1. Extraction (E)
         sga_users_df = self.sga_repo.get_users_df()
+        logger.debug(f"Found {sga_users_df.height} users in SGA.")
         sam_users_df = self.sam_repo.get_current_users_df()
+        logger.debug(f"Found {sam_users_df.height} users in SAM.")
 
         # 2. Transformation (T)
         if not sga_users_df.is_empty():
@@ -55,7 +57,7 @@ class IntegrationService(IIntegrationService):
                 | (pl.col("unidade") != pl.col("unidade_sam"))
             )
 
-            # Process new users: generate password
+            # Process new users: generate password, cpf_cnpj and split name
             if not new_users_df.is_empty():
                 logger.info(f"Detected {new_users_df.height} new users.")
                 # Map default password: first 6 chars of username + @@ (legacy pattern)
@@ -75,6 +77,10 @@ class IntegrationService(IIntegrationService):
                     .str.split(" ")
                     .map_elements(lambda x: " ".join(x[1:]), return_dtype=pl.String)
                     .alias("last_name"),
+                    pl.col("username")
+                    .str.replace_all(r"[\./-]", "")
+                    .str.strip_chars()
+                    .alias("cpf_cnpj"),
                 )
         else:
             logger.warning(

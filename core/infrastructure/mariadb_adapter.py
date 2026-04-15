@@ -5,6 +5,7 @@ This module provides a MariaDB implementation of the IDatabase interface,
 using SQLAlchemy's connection pooling for efficient connection management
 and asyncio.to_thread() to run synchronous operations without blocking.
 """
+
 from fastapi.concurrency import asynccontextmanager
 
 from typing import Any, AsyncGenerator
@@ -22,23 +23,27 @@ from core.config.settings import settings
 class MariaDbTransaction(ITransaction):
     def __init__(self, connection: AsyncConnection):
         self._conn: AsyncConnection = connection
-    
-    async def execute(self, query: str, params: dict | None = None) -> list[dict[str, Any]]:
+
+    async def execute(
+        self, query: str, params: dict | None = None
+    ) -> list[dict[str, Any]]:
         try:
             result = await self._conn.execute(text(query), params or {})
             if result.returns_rows:
                 return [dict(row._mapping) for row in result.all()]
             return []
         except SQLAlchemyError as e:
-            logger.error(f"Database execution error: {e}.\nQuery: {query}\nParams: {params}")
+            logger.error(
+                f"Database execution error: {e}.\nQuery: {query}\nParams: {params}"
+            )
             raise
-    
+
     async def commit(self) -> None:
         await self._conn.commit()
-    
+
     async def rollback(self) -> None:
         await self._conn.rollback()
-    
+
     async def last_insert_id(self) -> int:
         result = await self._conn.execute(text("SELECT LAST_INSERT_ID()"))
         return result.scalar_one() or 0
@@ -55,7 +60,7 @@ class MariaDbAdapter(IDatabase):
 
     def __init__(self, connection_string: str):
         self._validate_connection_string(connection_string)
-        
+
         self._engine: AsyncEngine = create_async_engine(
             connection_string,
             pool_size=10,
@@ -65,7 +70,7 @@ class MariaDbAdapter(IDatabase):
             echo=settings.DEVELOPMENT_ENV,  # Set to True for SQL logging in development
         )
         logger.info("MariaDB Engine initialized.")
-    
+
     def _validate_connection_string(self, connection_string: str) -> None:
         if not connection_string.startswith("mariadb+"):
             raise ValueError(
@@ -76,7 +81,7 @@ class MariaDbAdapter(IDatabase):
     @asynccontextmanager
     async def transaction(self) -> AsyncGenerator[ITransaction, None]:
         """
-        The magic happens here. 
+        The magic happens here.
         1. Borrows a connection from the pool.
         2. Starts a transaction (begin).
         3. Yields the ITransaction interface.

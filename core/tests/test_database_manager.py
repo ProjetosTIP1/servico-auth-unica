@@ -16,6 +16,7 @@ from core.infrastructure.sqls_adapter import SqlServerAdapter, SqlServerTransact
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
+
 def _async_ctx(value=None):
     """Returns a MagicMock that behaves as an async context manager."""
     ctx = MagicMock()
@@ -26,8 +27,8 @@ def _async_ctx(value=None):
 
 # ─── DatabaseManager ──────────────────────────────────────────────────────────
 
-class TestDatabaseManager:
 
+class TestDatabaseManager:
     @pytest.fixture
     def manager(self):
         return DatabaseManager()
@@ -114,8 +115,8 @@ class TestDatabaseManager:
 
 # ─── MariaDbTransaction ────────────────────────────────────────────────────────
 
-class TestMariaDbTransaction:
 
+class TestMariaDbTransaction:
     def _conn_with_result(self, rows: list[dict], returns_rows: bool = True):
         mock_result = MagicMock()
         mock_result.returns_rows = returns_rows
@@ -181,8 +182,8 @@ class TestMariaDbTransaction:
 
 # ─── MariaDbAdapter ────────────────────────────────────────────────────────────
 
-class TestMariaDbAdapter:
 
+class TestMariaDbAdapter:
     _CONN_STR = "mariadb+asyncmy://user:pass@localhost/db"
 
     @patch("core.infrastructure.mariadb_adapter.create_async_engine")
@@ -235,8 +236,8 @@ class TestMariaDbAdapter:
 
 # ─── SqlServerTransaction ──────────────────────────────────────────────────────
 
-class TestSqlServerTransaction:
 
+class TestSqlServerTransaction:
     def _make_conn(self, description, rows):
         cursor = MagicMock()
         cursor.description = description
@@ -310,8 +311,8 @@ class TestSqlServerTransaction:
 
 # ─── SqlServerAdapter ──────────────────────────────────────────────────────────
 
-class TestSqlServerAdapter:
 
+class TestSqlServerAdapter:
     _CONN_STR = "DRIVER={SQL Server};SERVER=localhost;DATABASE=mydb"
 
     def test_validate_empty_string_raises(self):

@@ -130,6 +130,16 @@ class Settings(BaseSettings):
         )
 
     @property
+    def database_sync_url(self) -> str:
+        """Synchronous MariaDB connection URL for Polars extraction."""
+        user = quote_plus(self.MARIADB_USER)
+        password = quote_plus(self.MARIADB_PASSWORD)
+        return (
+            f"mariadb+mariadbconnector://{user}:{password}"
+            f"@{self.MARIADB_HOST}:{self.MARIADB_PORT}/{self.MARIADB_DB}"
+        )
+
+    @property
     def redis_url(self) -> str:
         """Redis connection URL with properly encoded password."""
         password = quote_plus(self.REDIS_PASSWORD)

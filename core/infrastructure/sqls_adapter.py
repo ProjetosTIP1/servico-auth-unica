@@ -20,7 +20,9 @@ class SqlServerTransaction(ITransaction):
     def __init__(self, connection: pyodbc.Connection):
         self._conn = connection
 
-    async def execute(self, query: str, params: dict | None = None) -> list[dict[str, Any]]:
+    async def execute(
+        self, query: str, params: dict | None = None
+    ) -> list[dict[str, Any]]:
         def _execute() -> list[dict[str, Any]]:
             cursor = self._conn.cursor()
             try:
@@ -38,7 +40,9 @@ class SqlServerTransaction(ITransaction):
         try:
             return await asyncio.to_thread(_execute)
         except pyodbc.Error as e:
-            logger.error(f"Database execution error: {e}.\nQuery: {query}\nParams: {params}")
+            logger.error(
+                f"Database execution error: {e}.\nQuery: {query}\nParams: {params}"
+            )
             raise
 
     async def commit(self) -> None:

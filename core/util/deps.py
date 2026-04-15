@@ -163,7 +163,6 @@ def get_integration_service(
     return IntegrationService(sga_repo=sga_repo, sam_repo=sam_repo)
 
 
-
 async def get_current_user(
     token: Annotated[str, Depends(get_token_from_request)],
     user_repo: Annotated[IUserRepository, Depends(get_user_repository)],

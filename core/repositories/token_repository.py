@@ -7,7 +7,9 @@ from core.helpers.logger_helper import logger
 
 
 class TokenRepository(ITokenRepository):
-    async def create_access_token(self, txn: ITransaction, token: TokenCreateModel) -> TokenModel:
+    async def create_access_token(
+        self, txn: ITransaction, token: TokenCreateModel
+    ) -> TokenModel:
         """Create an access token record in the database."""
         try:
             query = """
@@ -25,7 +27,9 @@ class TokenRepository(ITokenRepository):
                 },
             )
             logger.debug(message=f"Access token created for user ID: {token.user_id}")
-            token_res: TokenModel | None = await self.get_token_by_string(txn, token.token)
+            token_res: TokenModel | None = await self.get_token_by_string(
+                txn, token.token
+            )
             if not token_res:
                 raise Exception("Token not found after creation")
             return token_res
@@ -36,7 +40,9 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error creating access token: {str(e)}")
 
-    async def create_refresh_token(self, txn: ITransaction, token: TokenCreateModel) -> TokenModel:
+    async def create_refresh_token(
+        self, txn: ITransaction, token: TokenCreateModel
+    ) -> TokenModel:
         """Create a refresh token record in the database."""
         try:
             query = """
@@ -54,7 +60,9 @@ class TokenRepository(ITokenRepository):
                 },
             )
             logger.debug(message=f"Refresh token created for user ID: {token.user_id}")
-            token_res: TokenModel | None = await self.get_token_by_string(txn, token.token)
+            token_res: TokenModel | None = await self.get_token_by_string(
+                txn, token.token
+            )
             if not token_res:
                 raise Exception("Token not found after creation")
             return token_res
@@ -65,7 +73,9 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error creating refresh token: {str(e)}")
 
-    async def get_last_refresh_token(self, txn: ITransaction, user_id: str) -> TokenModel:
+    async def get_last_refresh_token(
+        self, txn: ITransaction, user_id: str
+    ) -> TokenModel:
         """Retrieve the most recent refresh token for a user."""
         try:
             query = """
@@ -99,7 +109,9 @@ class TokenRepository(ITokenRepository):
             )
             raise Exception(f"Error retrieving last refresh token: {str(e)}")
 
-    async def get_token_by_string(self, txn: ITransaction, token: str) -> TokenModel | None:
+    async def get_token_by_string(
+        self, txn: ITransaction, token: str
+    ) -> TokenModel | None:
         """Retrieve a token by its JWT string value."""
         try:
             query = """
