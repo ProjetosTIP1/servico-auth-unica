@@ -51,21 +51,30 @@ class IntegrationService(IIntegrationService):
             changed_users_df = common_users_df.filter(
                 (pl.col("nome_completo") != pl.col("nome_completo_sam"))
                 | (pl.col("cargo") != pl.col("cargo_sam"))
-                | (pl.col("Departamento") != pl.col("Departamento_sam"))
-                | (pl.col("UNIDADE") != pl.col("UNIDADE_sam"))
+                | (pl.col("departamento") != pl.col("departamento_sam"))
+                | (pl.col("unidade") != pl.col("unidade_sam"))
             )
 
             # Process new users: generate password
             if not new_users_df.is_empty():
                 logger.info(f"Detected {new_users_df.height} new users.")
                 # Map default password: first 6 chars of username + @@ (legacy pattern)
+                # Set first_name and last_name from nome_completo
                 new_users_df = new_users_df.with_columns(
                     pl.col("username")
                     .str.slice(0, 6)
                     .map_elements(
                         lambda x: get_password_hash(f"{x}@@"), return_dtype=pl.String
                     )
-                    .alias("password")
+                    .alias("password"),
+                    pl.col("nome_completo")
+                    .str.split(" ")
+                    .map_elements(lambda x: x[0], return_dtype=pl.String)
+                    .alias("first_name"),
+                    pl.col("nome_completo")
+                    .str.split(" ")
+                    .map_elements(lambda x: " ".join(x[1:]), return_dtype=pl.String)
+                    .alias("last_name"),
                 )
         else:
             logger.warning(

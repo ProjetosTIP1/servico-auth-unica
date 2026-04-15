@@ -24,7 +24,8 @@ class SgaPolarsAdapter(ISgaRepository):
 
     def _read_sql(self, sql: str) -> pl.DataFrame:
         try:
-            return pl.read_database(query=sql, connection=self._engine)
+            with self._engine.connect() as conn:
+                return pl.read_database(query=sql, connection=conn)
         except Exception as e:
             logger.error(f"Error reading from SGA: {e}")
             return pl.DataFrame()
@@ -138,7 +139,8 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         FROM users
         """
         try:
-            return pl.read_database(query=sql, connection=self._engine)
+            with self._engine.connect() as conn:
+                return pl.read_database(query=sql, connection=conn)
         except Exception as e:
             logger.error(f"Error reading current users from SAM: {e}")
             return pl.DataFrame()
@@ -148,7 +150,8 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         # In legacy it was 'valeflow_unidades'
         sql = "SELECT ID, SIGLA FROM units WHERE active = 1"
         try:
-            return pl.read_database(query=sql, connection=self._engine)
+            with self._engine.connect() as conn:
+                return pl.read_database(query=sql, connection=conn)
         except Exception as e:
             logger.error(f"Error reading units from SAM: {e}")
             return pl.DataFrame()
@@ -157,7 +160,8 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         # Assuming a positions table
         sql = "SELECT id, code FROM positions"
         try:
-            return pl.read_database(query=sql, connection=self._engine)
+            with self._engine.connect() as conn:
+                return pl.read_database(query=sql, connection=conn)
         except Exception as e:
             logger.error(f"Error reading positions from SAM: {e}")
             return pl.DataFrame()
