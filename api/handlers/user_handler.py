@@ -26,6 +26,32 @@ async def get_user_by_id(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@user_router.get("/cpfcnpj/{cpf_cnpj}", response_model=UserType)
+async def get_user_by_cpfcnpj(
+    authenticated_user: AuthenticatedUser, cpf_cnpj: str, user_service: UserServiceDeps
+):
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        user: UserType = await user_service.get_user_by_cpfcnpj(cpf_cnpj)
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@user_router.get("/list", response_model=list[UserType])
+async def get_all_users(
+    authenticated_user: AuthenticatedUser, user_service: UserServiceDeps
+):
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        users: list[UserType] = await user_service.list_users()
+        return users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @user_router.post("/", response_model=UserType)
 async def create_user(
     authenticated_user: AuthenticatedUser,
