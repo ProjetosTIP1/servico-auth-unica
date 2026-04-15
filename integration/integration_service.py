@@ -12,8 +12,8 @@ class IntegrationService(IIntegrationService):
     """
 
     def __init__(self, sga_repo: ISgaRepository, sam_repo: ISamIntegrationRepository):
-        self.sga_repo = sga_repo
-        self.sam_repo = sam_repo
+        self.sga_repo: ISgaRepository = sga_repo
+        self.sam_repo: ISamIntegrationRepository = sam_repo
 
     async def sync_all(self, dry_run: bool = False):
         logger.info("Starting full synchronization...")
