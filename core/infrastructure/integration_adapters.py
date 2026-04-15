@@ -52,8 +52,8 @@ class SgaPolarsAdapter(ISgaRepository):
             concat(
                 CASE WHEN COPFIL = 0 THEN EMPSIGLA ELSE FILSIGLA END, '-', CA.CODIGO
             ) as cargo,
-            d.codigo as Departamento,
-            IIF(FILSIGLA IS NULL, EMPSIGLA, FILSIGLA) AS UNIDADE
+            d.codigo as departamento,
+            IIF(FILSIGLA IS NULL, EMPSIGLA, FILSIGLA) AS unidade
         FROM UltimoCadastro UC
         INNER JOIN ContratoDetalhe C ON UC.FORCOD = C.COPFOR
         JOIN RH_LOTACAO L ON L.PPREF = COPCOD AND INICIO = (SELECT MAX(INICIO) FROM RH_LOTACAO WHERE PPREF = C.COPCOD)
