@@ -83,10 +83,6 @@ class Settings(BaseSettings):
         "SQLSERVER_TRUST_SERVER_CERTIFICATE", "yes"
     )
     SQLSERVER_ENCRYPT: str = os.getenv("SQLSERVER_ENCRYPT", "yes")
-    REDIS_HOST: str = os.getenv("REDIS_HOST", "your_redis_host")
-    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
-    REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
-    REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "your_redis_password")
 
     WHATSAPP_API_URL: str = os.getenv("WHATSAPP_API_URL", "your_whatsapp_api_url")
     WHATSAPP_API_TOKEN: str = os.getenv("WHATSAPP_API_TOKEN", "your_whatsapp_api_token")
@@ -137,14 +133,6 @@ class Settings(BaseSettings):
         return (
             f"mariadb+mariadbconnector://{user}:{password}"
             f"@{self.MARIADB_HOST}:{self.MARIADB_PORT}/{self.MARIADB_DB}"
-        )
-
-    @property
-    def redis_url(self) -> str:
-        """Redis connection URL with properly encoded password."""
-        password = quote_plus(self.REDIS_PASSWORD)
-        return (
-            f"redis://:{password}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
         )
 
     @property

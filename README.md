@@ -42,7 +42,6 @@ O serviço expõe uma API REST que centraliza:
 | Validação / schemas | Pydantic v2 + Pydantic Settings |
 | Banco principal | MariaDB (via driver nativo `mariadb`) |
 | Banco secundário | SQL Server (via `pyodbc`) |
-| Cache / sessões | Redis |
 | Autenticação Microsoft | MSAL (`msal`) + `python-jose[cryptography]` |
 | Hash de senhas | `bcrypt` |
 | Linting / formatação | `ruff` |
@@ -162,12 +161,6 @@ SQLSERVER_DRIVER=ODBC Driver 17 for SQL Server
 SQLSERVER_ENCRYPT=yes
 SQLSERVER_TRUST_SERVER_CERTIFICATE=yes
 
-# ── Redis ──────────────────────────────────────────────────────────────────
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
-REDIS_PASSWORD=sua_senha_redis
-
 # ── Microsoft Entra ID (Azure AD) ──────────────────────────────────────────
 # AZURE_TENANT_ID: GUID do seu tenant ou "common" para multi-tenant
 AZURE_TENANT_ID=seu-tenant-guid
@@ -207,7 +200,7 @@ Tabelas criadas:
 - Python 3.12+
 - [`uv`](https://github.com/astral-sh/uv)
 - MariaDB em execução
-- (Opcional) Redis e SQL Server
+- (Opcional) SQL Server
 
 ### Instalação
 

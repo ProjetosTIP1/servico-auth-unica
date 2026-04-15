@@ -32,16 +32,16 @@ class IntegrationService(IIntegrationService):
 
         # Defensive casting: ensure comparison columns are strings
         comparison_cols = ["nome_completo", "cargo", "departamento", "unidade"]
-        
+
         if not sga_users_df.is_empty():
-            sga_users_df = sga_users_df.with_columns([
-                pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols
-            ])
-        
+            sga_users_df = sga_users_df.with_columns(
+                [pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols]
+            )
+
         if not sam_users_df.is_empty():
-            sam_users_df = sam_users_df.with_columns([
-                pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols
-            ])
+            sam_users_df = sam_users_df.with_columns(
+                [pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols]
+            )
 
         # 2. Transformation (T)
         if not sga_users_df.is_empty():
