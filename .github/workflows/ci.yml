@@ -36,10 +36,10 @@ jobs:
         uv sync
     - name: Lint with ruff
       run: |
-        ruff check
+        uv run ruff check
     - name: Lint with ty
       run: |
-        ty check
+        uv run ty check
     - name: Test with pytest
       run: |
-        pytest
+        uv run pytest
