@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from api.handlers.oauth_handler import oauth_router
 from api.handlers.user_handler import user_router
 from api.handlers.ms_handler import ms_router
+from api.handlers.image_handler import image_router
 from api.handlers.integration_handler import router as integration_router
 
 
@@ -76,4 +77,5 @@ app.mount("/images", StaticFiles(directory="images"), name="images")
 app.include_router(router=oauth_router, tags=["OAuth"])
 app.include_router(router=user_router, tags=["Users"])
 app.include_router(router=ms_router)
+app.include_router(router=image_router)
 app.include_router(router=integration_router)

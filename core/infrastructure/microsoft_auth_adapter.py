@@ -181,6 +181,27 @@ class MicrosoftAuthAdapter(IMicrosoftAuthService):
                 f"Failed to exchange code for token: {exc}"
             ) from exc
 
+    async def get_user_profile_picture(self, access_token: str) -> bytes | None:
+        """
+        Fetch the user's profile picture from Microsoft Graph.
+        """
+        url = "https://graph.microsoft.com/v1.0/me/photo/$value"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, headers=headers)
+                if response.status_code == 404:
+                    logger.debug("User has no profile picture in Microsoft Graph.")
+                    return None
+                response.raise_for_status()
+                return response.content
+        except httpx.HTTPError as exc:
+            logger.warning(f"Failed to fetch profile picture from Microsoft Graph: {exc}")
+            return None
+        except Exception as exc:
+            logger.error(f"Unexpected error fetching profile picture: {exc}")
+            return None
+
     # ── Private helpers ────────────────────────────────────────────────────────
 
     async def _get_jwks(self) -> dict[str, Any]:

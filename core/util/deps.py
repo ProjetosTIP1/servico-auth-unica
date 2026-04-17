@@ -41,6 +41,7 @@ from core.ports.service import IMicrosoftAuthService
 from core.services.microsoft_login_service import MicrosoftLoginService
 from core.services.token_service import TokenService as TokenServiceImpl
 from core.services.user_service import UserService as UserServiceImpl
+from core.services.image_usecase import ImageUsecase
 from integration.integration_service import IntegrationService
 
 # ── Bearer token extractor ─────────────────────────────────────────────────────
@@ -123,15 +124,25 @@ def get_user_service(
     return UserServiceImpl(user_repository=user_repository, db=mariadb)
 
 
+def get_image_usecase() -> ImageUsecase:
+    """Provide a new instance of the ImageUsecase."""
+    return ImageUsecase()
+
+
 def get_microsoft_login_service(
     ms_auth: IMicrosoftAuthService = Depends(_get_ms_auth_adapter),
     user_repo: IUserRepository = Depends(get_user_repository),
     token_service: TokenServiceImpl = Depends(get_token_service),
+    image_usecase: ImageUsecase = Depends(get_image_usecase),
     mariadb: IDatabase = Depends(get_mariadb_database),
 ) -> MicrosoftLoginService:
     """Provide a fully wired `MicrosoftLoginService` to the route handler."""
     return MicrosoftLoginService(
-        ms_auth=ms_auth, user_repo=user_repo, token_service=token_service, db=mariadb
+        ms_auth=ms_auth,
+        user_repo=user_repo,
+        token_service=token_service,
+        image_usecase=image_usecase,
+        db=mariadb,
     )
 
 
@@ -260,4 +271,7 @@ async def require_microsoft_user(
 AuthenticatedUser = Annotated[UserType, Depends(get_current_user)]
 TokenServiceDeps = Annotated[ITokenService, Depends(get_token_service)]
 UserServiceDeps = Annotated[UserServiceImpl, Depends(get_user_service)]
+ImageUsecaseDeps = Annotated[ImageUsecase, Depends(get_image_usecase)]
+DatabaseDeps = Annotated[IDatabase, Depends(get_mariadb_database)]
+DatabaseManagerDeps = Annotated[DatabaseManager, Depends(get_database_manager)]
 TokenDeps = Annotated[str | None, Depends(get_current_token)]

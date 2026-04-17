@@ -351,9 +351,11 @@ Este é o fluxo principal de SSO. O frontend usa **MSAL.js** para autenticar o u
 
 #### Por que `id_token` e não `access_token`?
 
-> O `access_token` emitido com escopos do Microsoft Graph (ex.: `User.Read`) tem como audience `00000003-0000-0000-c000-000000000000` (o ID fixo do Graph). As chaves públicas usadas para assinar esse token **nunca são publicadas** no JWKS do seu tenant — portanto, nenhum app externo consegue validá-lo.
->
 > O `id_token` sempre tem como audience o `clientId` do seu app registrado, é assinado com as chaves publicadas no JWKS e carrega todas as informações de identidade necessárias (`oid`, `email`, `name`, etc.).
+>
+> #### ⚠️ Requisito: Access Token para Sincronização de Foto
+> Para que o backend consiga sincronizar a foto de perfil do usuário via Microsoft Graph, o frontend **também** deve fornecer um `access_token` com o escopo `User.Read`. 
+> O fluxo de validação no backend agora tenta buscar a imagem do Graph API (`/me/photo/$value`) usando esse token caso ele seja fornecido.
 
 #### Diagrama completo do fluxo
 

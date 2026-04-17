@@ -199,3 +199,16 @@ class IMicrosoftAuthService(ABC):
             MicrosoftAuthError: if the code exchange or token validation fails.
         """
         ...
+
+    @abstractmethod
+    async def get_user_profile_picture(self, access_token: str) -> bytes | None:
+        """
+        Fetch the user's profile picture from Microsoft Graph.
+
+        Args:
+            access_token: A valid Microsoft Graph Access Token with 'User.Read' scope.
+
+        Returns:
+            The raw bytes of the image, or None if no picture is set or the call fails.
+        """
+        ...

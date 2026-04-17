@@ -74,6 +74,36 @@ class TestImageUsecase:
         mock_txn.rollback.assert_not_called()
 
     @patch("core.services.image_usecase.filetype.guess")
+    @patch("core.services.image_usecase.uuid4")
+    @patch("core.services.image_usecase.aiofiles.open")
+    @patch("core.services.image_usecase.os.makedirs")
+    async def test_upsert_from_bytes_success(
+        self, mock_makedirs, mock_open, mock_uuid, mock_guess, 
+        image_usecase, mock_txn
+    ):
+        # Arrange
+        user_id = 1
+        content = b"fake image bytes content"
+        mock_uuid.return_value.hex = "bytesuuid"
+        
+        mock_kind = MagicMock()
+        mock_kind.mime = "image/png"
+        mock_kind.extension = "png"
+        mock_guess.return_value = mock_kind
+        
+        mock_file_context = AsyncMock()
+        mock_open.return_value.__aenter__.return_value = mock_file_context
+
+        # Act
+        await image_usecase.upsert_from_bytes(mock_txn, content, user_id)
+
+        # Assert
+        mock_txn.execute.assert_called_once()
+        args, _ = mock_txn.execute.call_args
+        assert "bytesuuid.png" in args[1][0]
+        mock_txn.commit.assert_called_once()
+
+    @patch("core.services.image_usecase.filetype.guess")
     async def test_upsert_user_profile_picture_file_too_large(
         self, mock_guess, image_usecase, mock_upload_file, mock_txn
     ):
