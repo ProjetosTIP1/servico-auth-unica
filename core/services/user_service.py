@@ -158,9 +158,14 @@ class UserService(IUserService):
                 ):
                     raise ValueError("New password and current password are required")
 
+                if not user.cpf_cnpj:
+                    raise ValueError("User CPF/CNPJ not found")
+
                 hashed_password: (
                     str | None
-                ) = await self.user_repository.get_user_hashed_password(txn, user.email)
+                ) = await self.user_repository.get_user_hashed_password(
+                    txn, user.cpf_cnpj
+                )
 
                 if not hashed_password or not verify_password(
                     passwords_data.current_password, hashed_password

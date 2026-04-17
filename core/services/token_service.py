@@ -319,7 +319,7 @@ class TokenService(ITokenService):
 
                 hashed_password: (
                     str | None
-                ) = await self.user_repository.get_user_hashed_password(txn, user.email)
+                ) = await self.user_repository.get_user_hashed_password(txn, cpfcnpj)
                 if not hashed_password or not verify_password(
                     password, hashed_password
                 ):

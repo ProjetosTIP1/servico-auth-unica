@@ -30,18 +30,21 @@ class IntegrationService(IIntegrationService):
         sam_users_df = self.sam_repo.get_current_users_df()
         logger.debug(f"Found {sam_users_df.height} users in SAM.")
 
-        # Defensive casting: ensure comparison columns are strings
-        comparison_cols = ["nome_completo", "cargo", "departamento", "unidade"]
+        # Defensive casting: ensure comparison columns and join key are strings
+        # This prevents type mismatch errors when one of the DataFrames is empty (producing Null types)
+        sync_cols = ["username", "nome_completo", "cargo", "departamento", "unidade"]
 
-        if not sga_users_df.is_empty():
-            sga_users_df = sga_users_df.with_columns(
-                [pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols]
+        def normalize_df(df: pl.DataFrame) -> pl.DataFrame:
+            # Only cast if columns exist to avoid errors with completely empty DFs
+            existing = [c for c in sync_cols if c in df.columns]
+            if not existing:
+                return df
+            return df.with_columns(
+                [pl.col(c).cast(pl.String).fill_null("") for c in existing]
             )
 
-        if not sam_users_df.is_empty():
-            sam_users_df = sam_users_df.with_columns(
-                [pl.col(c).cast(pl.String).fill_null("") for c in comparison_cols]
-            )
+        sga_users_df = normalize_df(sga_users_df)
+        sam_users_df = normalize_df(sam_users_df)
 
         # 2. Transformation (T)
         if not sga_users_df.is_empty():

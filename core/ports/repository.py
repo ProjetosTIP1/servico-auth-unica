@@ -87,9 +87,9 @@ class IUserRepository(ABC):
 
     @abstractmethod
     async def get_user_hashed_password(
-        self, txn: ITransaction, email: str
+        self, txn: ITransaction, cpfcnpj: str
     ) -> str | None:
-        """Get the hashed password for a user by email"""
+        """Get the hashed password for a user by CPF/CNPJ"""
         pass
 
     @abstractmethod

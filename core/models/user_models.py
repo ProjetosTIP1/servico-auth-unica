@@ -6,7 +6,9 @@ from typing import Optional
 class UserType(BaseModel):
     id: int = Field(default=..., description="The unique identifier of the user")
     username: str = Field(default=..., description="The username of the user")
-    email: str = Field(default=..., description="The email address of the user")
+    email: Optional[str] = Field(
+        default=None, description="The email address of the user"
+    )
     ms_oid: Optional[str] = Field(
         default=None, description="The Microsoft object ID of the user"
     )
