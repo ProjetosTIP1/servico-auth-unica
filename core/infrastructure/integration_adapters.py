@@ -40,18 +40,21 @@ class SgaPolarsAdapter(ISgaRepository):
             GROUP BY COPFOR
         ),
         ContratoDetalhe AS (
-            SELECT C.COPFOR, C.COPCOD, C.COPDTFINAL, C.COPEMP, C.COPFIL
+            -- Adicionado COPREG aqui para que o SELECT final consiga enxergá-lo
+            SELECT C.COPFOR, C.COPCOD, C.COPDTFINAL, C.COPEMP, C.COPFIL, C.COPREG 
             FROM CONTRATOPESSOAL C
             INNER JOIN UltimoContrato UC ON C.COPFOR = UC.COPFOR AND C.COPCOD = UC.COPCOD
         ),
         UltimoCadastro AS (
-            SELECT FORCNPJCPF, FORNOME, FORBLOQCOMPRA, FORCFOR, FORCOD,
-                   ROW_NUMBER() OVER (PARTITION BY FORCNPJCPF ORDER BY FORCOD DESC) AS RN
+            SELECT FORCNPJCPF, FORNOME, FORBLOQCOMPRA, FORCFOR, FORCOD, FORINSC,
+                ROW_NUMBER() OVER (PARTITION BY FORCNPJCPF ORDER BY FORCOD DESC) AS RN
             FROM FORNECEDOR
         )
         SELECT 
             UC.FORCNPJCPF AS username, 
             UC.FORNOME AS nome_completo,
+            UC.FORINSC AS insc,
+            C.COPREG AS matricula, -- Campo adicionado aqui
             concat(
                 CASE WHEN COPFIL = 0 THEN EMPSIGLA ELSE FILSIGLA END, '-', CA.CODIGO
             ) as cargo,
@@ -217,10 +220,11 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
             for row in df.to_dicts():
                 # SAM Schema columns: username, email, full_name, unit, job, branche, is_active, hashed_password
                 stmt = text("""
-                    INSERT INTO users (username, full_name, first_name, last_name, cpf_cnpj, email, unit, job, branche, is_active, hashed_password, created_at, updated_at)
-                    VALUES (:username, :full_name, :first_name, :last_name, :cpf_cnpj, :email, :unit, :job, :branche, :is_active, :hashed_password, NOW(), NOW())
+                    INSERT INTO users (username, full_name, matricula, first_name, last_name, cpf_cnpj, email, unit, job, branche, is_active, hashed_password, created_at, updated_at)
+                    VALUES (:username, :full_name, :matricula, :first_name, :last_name, :cpf_cnpj, :email, :unit, :job, :branche, :is_active, :hashed_password, NOW(), NOW())
                     ON DUPLICATE KEY UPDATE 
                         full_name = VALUES(full_name),
+                        matricula = VALUES(matricula),
                         first_name = VALUES(first_name),
                         last_name = VALUES(last_name),
                         cpf_cnpj = VALUES(cpf_cnpj),
@@ -236,6 +240,7 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
                     {
                         "username": row["username"],
                         "full_name": row["nome_completo"],
+                        "matricula": row["matricula"],
                         "first_name": row["first_name"],
                         "last_name": row["last_name"],
                         "cpf_cnpj": row["cpf_cnpj"],
