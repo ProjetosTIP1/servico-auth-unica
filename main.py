@@ -62,6 +62,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/")
+async def root():
+    return {"message": "Single Auth Microservice is running"}
+
+
 # Register routers
 app.include_router(router=oauth_router, tags=["OAuth"])
 app.include_router(router=user_router, tags=["Users"])
