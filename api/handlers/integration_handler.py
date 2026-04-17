@@ -16,10 +16,11 @@ async def sync_all(
     - Dry run will only log the changes without applying them.
     """
     try:
-        await service.sync_all(dry_run=dry_run)
+        result = await service.sync_all(dry_run=dry_run)
         return {
             "message": "Full synchronization completed successfully",
             "dry_run": dry_run,
+            "result": result,
         }
     except Exception as e:
         raise HTTPException(
@@ -38,10 +39,11 @@ async def sync_users(
     Synchronize users only.
     """
     try:
-        await service.sync_users(dry_run=dry_run)
+        result = await service.sync_users(dry_run=dry_run)
         return {
             "message": "User synchronization completed successfully",
             "dry_run": dry_run,
+            "result": result,
         }
     except Exception as e:
         raise HTTPException(

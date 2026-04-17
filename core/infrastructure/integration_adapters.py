@@ -105,16 +105,16 @@ class SgaPolarsAdapter(ISgaRepository):
         return self._read_sql(sql)
 
     def get_departments_df(self) -> pl.DataFrame:
-        sql = "SELECT CODIGO as Codigo, NOME as Nome FROM RH_DEPARTAMENTO WHERE PPAPLIC = 'G'"
+        sql = "SELECT CODIGO as erp_id, NOME as name FROM RH_DEPARTAMENTO WHERE PPAPLIC = 'G'"
         return self._read_sql(sql)
 
     def get_positions_df(self) -> pl.DataFrame:
         sql = """
         SELECT DISTINCT
-            concat(CASE WHEN COPFIL = 0 THEN EMPSIGLA ELSE FILSIGLA END, '-', C.CODIGO) as Codigo,
-            C.NOME as Nome,
-            d.codigo as Departamento,
-            CASE WHEN COPFIL = 0 THEN EMPSIGLA ELSE FILSIGLA END as Filial
+            concat(CASE WHEN COPFIL = 0 THEN EMPSIGLA ELSE FILSIGLA END, '-', C.CODIGO) as erp_id,
+            C.NOME as name,
+            d.codigo as department_id,
+            CASE WHEN COPFIL = 0 THEN EMPSIGLA ELSE FILSIGLA END as branch
         FROM CONTRATOPESSOAL COP
         INNER JOIN FORNECEDOR F ON FORCOD = COPFOR
         INNER JOIN RH_LOTACAO L ON L.PPREF = COPCOD AND INICIO = (SELECT MAX(INICIO) FROM RH_LOTACAO WHERE PPREF = COP.COPCOD)
@@ -153,7 +153,7 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
     def get_units_mapping_df(self) -> pl.DataFrame:
         # Assuming there's a units table or similar. For now based on legacy logic:
         # In legacy it was 'valeflow_unidades'
-        sql = "SELECT ID, SIGLA FROM units WHERE active = 1"
+        sql = "SELECT id, erp_id, name, branch FROM units WHERE active = 1"
         try:
             with self._engine.connect() as conn:
                 return pl.read_database(query=sql, connection=conn)
@@ -163,7 +163,7 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
 
     def get_positions_mapping_df(self) -> pl.DataFrame:
         # Assuming a positions table
-        sql = "SELECT id, code FROM positions"
+        sql = "SELECT id, erp_id, name, department_id, branch FROM positions"
         try:
             with self._engine.connect() as conn:
                 return pl.read_database(query=sql, connection=conn)
@@ -182,11 +182,11 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         with self._engine.begin() as conn:
             for row in df.to_dicts():
                 stmt = text("""
-                    INSERT INTO departments (id, name) 
-                    VALUES (:id, :name)
+                    INSERT INTO departments (erp_id, name) 
+                    VALUES (:erp_id, :name)
                     ON DUPLICATE KEY UPDATE name = VALUES(name)
                 """)
-                conn.execute(stmt, {"id": row["Codigo"], "name": row["Nome"]})
+                conn.execute(stmt, {"erp_id": row["erp_id"], "name": row["name"]})
                 count += 1
         return count
 
@@ -197,16 +197,17 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         with self._engine.begin() as conn:
             for row in df.to_dicts():
                 stmt = text("""
-                    INSERT INTO positions (code, name, branche) 
-                    VALUES (:code, :name, :branche)
-                    ON DUPLICATE KEY UPDATE name = VALUES(name), branche = VALUES(branche)
+                    INSERT INTO positions (erp_id, name, department_id, branch) 
+                    VALUES (:erp_id, :name, :department_id, :branch)
+                    ON DUPLICATE KEY UPDATE name = VALUES(name), department_id = VALUES(department_id), branch = VALUES(branch)
                 """)
                 conn.execute(
                     stmt,
                     {
-                        "code": row["Codigo"],
-                        "name": row["Nome"],
-                        "branche": row["Filial"],
+                        "erp_id": row["erp_id"],
+                        "name": row["name"],
+                        "department_id": row["department_id"],
+                        "branch": row["branch"],
                     },
                 )
                 count += 1

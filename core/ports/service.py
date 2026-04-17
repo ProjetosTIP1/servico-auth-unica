@@ -118,12 +118,12 @@ class IIntegrationService(ABC):
     """Orchestrates the synchronization between SGA and SAM"""
 
     @abstractmethod
-    async def sync_all(self, dry_run: bool = False):
+    async def sync_all(self, dry_run: bool = False) -> dict[str, int]:
         """Perform a full synchronization (Departments, Positions, Users)"""
         pass
 
     @abstractmethod
-    async def sync_users(self, dry_run: bool = False):
+    async def sync_users(self, dry_run: bool = False) -> dict[str, int]:
         """Synchronize users only"""
         pass
 

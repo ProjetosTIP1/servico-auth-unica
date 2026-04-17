@@ -51,6 +51,28 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 SELECT 'Table [users] created successfully.' as Message;
 
+CREATE TABLE IF NOT EXISTS `departments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `erp_id` VARCHAR(255) NOT NULL UNIQUE,
+    `name` VARCHAR(255) NOT NULL UNIQUE,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+SELECT 'Table [departments] created successfully.' as Message;
+
+CREATE TABLE IF NOT EXISTS `positions` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `erp_id` VARCHAR(255) NOT NULL UNIQUE,
+    `name` VARCHAR(255) NOT NULL UNIQUE,
+    `department_id` INT NOT NULL,
+    `branch` VARCHAR(255) NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+SELECT 'Table [positions] created successfully.' as Message;
+
 
 -- Applications table for storing system-related URLs
 -- Maps to: Applications model in models.py
@@ -139,7 +161,7 @@ SELECT 'Table [database_logs] created successfully.' as Message;
 -- Uncomment and modify as needed for your initial setup
 
 -- INSERT IGNORE INTO `users` (`username`, `email`, `full_name`, `first_name`, `last_name`, `manager`, `unit`, `job`, `branche`, `cpf_cnpj`, `registration_number`, `profile_picture_url`, `hashed_password`, `is_active`)
--- VALUES ('admin', 'admin@company.com', 'System Administrator', 'System', 'Administrator', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '$2b$12$nquaLQ4N8126P8XvpEsR7.FcmglymWYVSvs5CYMJCX5mHydthAQCW', TRUE); -- This hash corresponds to the password 'admin123' (use a stronger password in production!)
+-- VALUES ('administrador', 'admin@pedreiraumvalemix.com.br', 'Administrator do Sistema', 'Administrator', 'do Sistema', NULL, NULL, NULL, NULL, '99999999999', '99999999999', NULL, '$2b$12$XmebKoVqAqEHbnh.8qdnQehrdxKR2Y9MqYblvyWGyqNQN6c16wkRK', TRUE);
 
 -- SELECT 'Default admin user created. Please update the password hash!' as Message;
 
