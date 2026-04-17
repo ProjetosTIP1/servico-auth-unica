@@ -51,6 +51,28 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 SELECT 'Table [users] created successfully.' as Message;
 
+CREATE TABLE IF NOT EXISTS `departments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `erp_id` VARCHAR(255) NOT NULL UNIQUE,
+    `name` VARCHAR(255) NOT NULL UNIQUE,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+SELECT 'Table [departments] created successfully.' as Message;
+
+CREATE TABLE IF NOT EXISTS `positions` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `erp_id` VARCHAR(255) NOT NULL UNIQUE,
+    `name` VARCHAR(255) NOT NULL UNIQUE,
+    `department_id` INT NOT NULL,
+    `branch` VARCHAR(255) NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+SELECT 'Table [positions] created successfully.' as Message;
+
 
 -- Applications table for storing system-related URLs
 -- Maps to: Applications model in models.py
