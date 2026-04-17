@@ -54,7 +54,7 @@ class SgaPolarsAdapter(ISgaRepository):
             UC.FORCNPJCPF AS username, 
             UC.FORNOME AS nome_completo,
             UC.FORINSC AS insc,
-            C.COPREG AS matricula, -- Campo adicionado aqui
+            C.COPREG AS registration_number, -- Campo adicionado aqui
             concat(
                 CASE WHEN COPFIL = 0 THEN EMPSIGLA ELSE FILSIGLA END, '-', CA.CODIGO
             ) as cargo,
@@ -220,11 +220,11 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
             for row in df.to_dicts():
                 # SAM Schema columns: username, email, full_name, unit, job, branche, is_active, hashed_password
                 stmt = text("""
-                    INSERT INTO users (username, full_name, matricula, first_name, last_name, cpf_cnpj, email, unit, job, branche, is_active, hashed_password, created_at, updated_at)
-                    VALUES (:username, :full_name, :matricula, :first_name, :last_name, :cpf_cnpj, :email, :unit, :job, :branche, :is_active, :hashed_password, NOW(), NOW())
+                    INSERT INTO users (username, full_name, registration_number, first_name, last_name, cpf_cnpj, email, unit, job, branche, is_active, hashed_password, created_at, updated_at)
+                    VALUES (:username, :full_name, :registration_number, :first_name, :last_name, :cpf_cnpj, :email, :unit, :job, :branche, :is_active, :hashed_password, NOW(), NOW())
                     ON DUPLICATE KEY UPDATE 
                         full_name = VALUES(full_name),
-                        matricula = VALUES(matricula),
+                        registration_number = VALUES(registration_number),
                         first_name = VALUES(first_name),
                         last_name = VALUES(last_name),
                         cpf_cnpj = VALUES(cpf_cnpj),
@@ -240,7 +240,7 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
                     {
                         "username": row["username"],
                         "full_name": row["nome_completo"],
-                        "matricula": row["matricula"],
+                        "registration_number": row["registration_number"],
                         "first_name": row["first_name"],
                         "last_name": row["last_name"],
                         "cpf_cnpj": row["cpf_cnpj"],

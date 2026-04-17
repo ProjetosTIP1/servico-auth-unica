@@ -43,6 +43,7 @@ class SgaUserDTO(BaseModel):
 
     username: str
     nome_completo: str
+    registration_number: str
     email: Optional[str] = None
     unidade_sigla: str = Field(alias="UNIDADE")
     cargo_codigo: str = Field(alias="cargo")
