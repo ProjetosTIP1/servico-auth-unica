@@ -132,7 +132,11 @@ class IntegrationService(IIntegrationService):
             logger.info(f"- New: {new_users_df.height}")
             logger.info(f"- Changed: {changed_users_df.height}")
             logger.info(f"- Disabled: {to_disable_df.height}")
-            return
+            return {
+                "new": new_users_df.height,
+                "changed": changed_users_df.height,
+                "disabled": to_disable_df.height,
+            }
 
         # Perform Upserts
         upsert_count = 0
