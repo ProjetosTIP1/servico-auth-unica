@@ -15,13 +15,14 @@ class IntegrationService(IIntegrationService):
         self.sga_repo: ISgaRepository = sga_repo
         self.sam_repo: ISamIntegrationRepository = sam_repo
 
-    async def sync_all(self, dry_run: bool = False):
+    async def sync_all(self, dry_run: bool = False) -> dict[str, int]:
         logger.info("Starting full synchronization...")
         # await self.sync_metadata(dry_run) # Optional metadata sync
-        await self.sync_users(dry_run)
+        result = await self.sync_users(dry_run)
         logger.info("Full synchronization completed.")
+        return result
 
-    async def sync_users(self, dry_run: bool = False):
+    async def sync_users(self, dry_run: bool = False) -> dict[str, int]:
         logger.info("Starting user synchronization...")
 
         # 1. Extraction (E)
@@ -153,6 +154,10 @@ class IntegrationService(IIntegrationService):
         logger.info(
             f"User sync finished. Upserted: {upsert_count}, Disabled: {disabled_count}"
         )
+        return {
+            "upserted": upsert_count,
+            "disabled": disabled_count,
+        }
 
     async def sync_metadata(self, dry_run: bool = False):
         logger.info("Starting metadata synchronization (Departments & Positions)...")
