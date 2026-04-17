@@ -1,6 +1,15 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field
+from typing import Dict
+from enum import Enum
+
+
+class PermissionEnum(str, Enum):
+    READ = "read"
+    WRITE = "write"
+    DELETE = "delete"
+    DENIED = "denied"
 
 
 class ApplicationModel(BaseModel):
@@ -63,3 +72,19 @@ class ApplicationUpdateModel(BaseModel):
     )
     name: Optional[str] = Field(default=None, description="The name of the system URI")
     url: Optional[str] = Field(default=None, description="The URL of the system")
+
+
+class UserApplicationModel(BaseModel):
+    user_id: int = Field(default=..., description="The ID of the user")
+    application_id: int = Field(default=..., description="The ID of the application")
+    permissions: Dict[str, PermissionEnum] = Field(
+        default=..., description="The permissions of the user in the application"
+    )
+    created_at: datetime = Field(
+        default=...,
+        description="The creation date of the user application in ISO format",
+    )
+    updated_at: Optional[datetime] = Field(
+        default=None,
+        description="The last update date of the user application in ISO format",
+    )

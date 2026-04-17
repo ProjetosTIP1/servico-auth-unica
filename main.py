@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
 from api.handlers.oauth_handler import oauth_router
@@ -66,6 +67,9 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {"message": "Single Auth Microservice is running"}
+
+
+app.mount("/images", StaticFiles(directory="images"), name="images")
 
 
 # Register routers

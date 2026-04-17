@@ -123,6 +123,29 @@ CREATE TABLE IF NOT EXISTS `tokens` (
 
 SELECT 'Table [tokens] created successfully.' as Message;
 
+
+CREATE TABLE IF NOT EXISTS `user_applications` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `application_id` INT NOT NULL,
+    `permissions` JSON NOT NULL, -- Object with permissions of user in application | {"read": "read", "write": "write", "delete": "delete", "denied": "denied"}
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- Foreign key constraints
+    CONSTRAINT `fk_user_applications_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_user_applications_application` FOREIGN KEY (`application_id`)
+        REFERENCES `applications`(`id`) ON DELETE CASCADE,
+        
+    -- Indexes for performance
+    INDEX `idx_user_applications_user_id` (`user_id`),
+    INDEX `idx_user_applications_application_id` (`application_id`)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+SELECT 'Table [user_applications] created successfully.' as Message;
+
+
 -- ==========================================================================
 -- AUDIT AND LOGGING TABLES
 -- ==========================================================================
