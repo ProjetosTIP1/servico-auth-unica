@@ -14,8 +14,10 @@ from core.util.deps import (
 from core.models.oauth_models import ResponseModel
 from core.config.settings import settings
 
+import json
 # Setup templates
 templates = Jinja2Templates(directory="templates")
+templates.env.filters["tojson"] = lambda x: json.dumps(x)
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -134,7 +136,7 @@ async def admin_applications(
         )
 
     applications = await app_service.list_applications()
-    apps_dict = [app.model_dump() for app in applications]
+    apps_dict = [app.model_dump(mode='json') for app in applications]
 
     return templates.TemplateResponse(
         "admin_applications.html", 
