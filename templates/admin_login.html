@@ -3,72 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAM Admin - Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>SAM - Admin Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
+            --primary: #fffcff;
+            --inverted: #28282b;
+            --secondary: #f2f2f2;
+            --tertiary: #96e6b3;
+            --surface: #efefef;
+            --text: #0d2818;
+            --border: #627264;
+            --accent: #627264;
+            --glass: rgba(140, 175, 156, 0.3);
+            --red: #ef3054;
+            --radius: 8px;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Chivo', sans-serif;
         }
 
         body {
-            background: var(--bg-gradient);
+            background-color: var(--primary);
+            color: var(--text);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-main);
             overflow: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(150, 230, 179, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(150, 230, 179, 0.1) 0px, transparent 50%);
         }
 
         .login-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px border var(--glass-border);
+            background: var(--surface);
+            border: 1px solid var(--border);
             padding: 3rem;
-            border-radius: 24px;
+            border-radius: var(--radius);
             width: 100%;
             max-width: 440px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
+            font-size: 2rem;
+            font-weight: 900;
             margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.05em;
+            color: var(--text);
+            letter-spacing: -0.02em;
         }
 
         p.subtitle {
-            color: var(--text-dim);
+            color: var(--accent);
             margin-bottom: 2.5rem;
-            font-size: 1rem;
+            font-size: 0.9375rem;
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         label {
@@ -76,47 +79,45 @@
             margin-bottom: 0.5rem;
             font-size: 0.875rem;
             font-weight: 600;
-            color: var(--text-dim);
-            transition: color 0.3s;
+            color: var(--accent);
         }
 
         input {
             width: 100%;
-            padding: 1rem 1.25rem;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            color: white;
+            padding: 0.875rem 1rem;
+            background: white;
+            border: 1px solid var(--tertiary);
+            border-radius: var(--radius);
+            color: var(--text);
             font-size: 1rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             outline: none;
         }
 
         input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-            background: rgba(0, 0, 0, 0.3);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(98, 114, 100, 0.1);
         }
 
         button {
             width: 100%;
             padding: 1rem;
-            background: var(--primary);
-            color: white;
+            background: var(--tertiary);
+            color: var(--text);
             border: none;
-            border-radius: 12px;
+            border-radius: var(--radius);
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             margin-top: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
         button:hover {
-            background: var(--primary-hover);
             transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 10px 15px -3px rgba(150, 230, 179, 0.4);
+            filter: brightness(1.05);
         }
 
         button:active {
@@ -124,50 +125,50 @@
         }
 
         .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
+            background: rgba(239, 48, 84, 0.1);
+            border: 1px solid var(--red);
+            color: var(--red);
             padding: 0.75rem;
-            border-radius: 10px;
+            border-radius: var(--radius);
             margin-bottom: 1.5rem;
             font-size: 0.875rem;
             display: none;
+            font-weight: 500;
         }
 
-        /* Decorative background elements */
-        .circle {
-            position: absolute;
-            border-radius: 50%;
-            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
-            filter: blur(80px);
-            z-index: -1;
-            opacity: 0.3;
+        .logo-mark {
+            width: 48px;
+            height: 48px;
+            background: var(--tertiary);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(150, 230, 179, 0.3);
         }
-
-        .c1 { width: 400px; height: 400px; top: -100px; right: -100px; }
-        .c2 { width: 300px; height: 300px; bottom: -50px; left: -50px; }
     </style>
 </head>
 <body>
-    <div class="circle c1"></div>
-    <div class="circle c2"></div>
-
     <div class="login-card">
-        <h1>SAM Admin</h1>
-        <p class="subtitle">Enter your credentials to access the console</p>
+        <div class="logo-mark">L</div>
+        <h1>SAM Console</h1>
+        <p class="subtitle">Secure access for platform administrators</p>
         
         <div id="error" class="error-message"></div>
 
         <form id="loginForm">
             <div class="form-group">
-                <label for="username">CPF / CNPJ</label>
+                <label for="username">Username (CPF/CNPJ)</label>
                 <input type="text" id="username" name="username" placeholder="000.000.000-00" required>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" placeholder="••••••••" required>
             </div>
-            <button type="submit">Sign In</button>
+            <button type="submit">Continue</button>
         </form>
     </div>
 
@@ -192,11 +193,11 @@
                 if (response.ok) {
                     window.location.href = result.data.redirect_url;
                 } else {
-                    errorDiv.innerText = result.detail || 'Access denied';
+                    errorDiv.innerText = result.detail || 'Authentication failed';
                     errorDiv.style.display = 'block';
                 }
             } catch (err) {
-                errorDiv.innerText = 'Connection error';
+                errorDiv.innerText = 'Service unavailable';
                 errorDiv.style.display = 'block';
             }
         };
