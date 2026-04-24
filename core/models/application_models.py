@@ -1,7 +1,6 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, List
 from pydantic import BaseModel, Field
-from typing import Dict
 from enum import Enum
 
 
@@ -12,79 +11,67 @@ class PermissionEnum(str, Enum):
     DENIED = "denied"
 
 
-class ApplicationModel(BaseModel):
-    client_id: str = Field(default=..., description="The client ID of the application")
-    client_secret: str = Field(
-        default=..., description="The client secret of the application"
-    )
-    skip_authorization: bool = Field(
-        default=False,
-        description="Indicates whether the application should skip the authorization step during the OAuth flow",
-    )
-    authorization_grant_type: str = Field(
-        default=...,
-        description="The authorization grant type used by the application, e.g., 'authorization_code', 'client_credentials', etc.",
-    )
-    name: str = Field(default=..., description="The name of the system URI")
-    is_active: bool = Field(
-        default=True, description="Indicates whether the system URI is active"
-    )
-    url: str = Field(default=..., description="The URL of the system")
-    created_at: datetime = Field(
-        default=..., description="The creation date of the system URI in ISO format"
-    )
-    updated_at: Optional[datetime] = Field(
-        default=None, description="The last update date of the system URI in ISO format"
-    )
+class ApplicationType(str, Enum):
+    ALL = "all"
+    INTERNAL = "internal"
+    EXTERNAL = "external"
+    RESTRICTED = "restricted"
 
 
-class ApplicationCreateModel(BaseModel):
-    client_id: str = Field(default=..., description="The client ID of the application")
-    client_secret: str = Field(
-        default=..., description="The client secret of the application"
+class ApplicationBase(BaseModel):
+    name: str = Field(..., description="The name of the application")
+    uri: str = Field(..., description="The URI of the application")
+    type: str = Field(..., description="The type of the application (all, internal, external, restricted)")
+    description: Optional[str] = Field(None, description="A brief description of the application")
+    permissions: Optional[List[str]] = Field(
+        None, description="List of available permissions for this application. Example: ['read', 'write']"
     )
-    skip_authorization: bool = Field(
-        default=False,
-        description="Indicates whether the application should skip the authorization step during the OAuth flow",
-    )
-    authorization_grant_type: str = Field(
-        default=...,
-        description="The authorization grant type used by the application, e.g., 'authorization_code', 'client_credentials', etc.",
-    )
-    name: str = Field(default=..., description="The name of the system URI")
-    url: str = Field(default=..., description="The URL of the system")
+    is_active: bool = Field(True, description="Indicates whether the application is active")
+
+
+class ApplicationCreateModel(ApplicationBase):
+    pass
 
 
 class ApplicationUpdateModel(BaseModel):
-    client_secret: Optional[str] = Field(
-        default=None, description="The client secret of the application"
-    )
-    skip_authorization: Optional[bool] = Field(
-        default=None,
-        description="Indicates whether the application should skip the authorization step during the OAuth flow",
-    )
-    authorization_grant_type: Optional[str] = Field(
-        default=None,
-        description="The authorization grant type used by the application, e.g., 'authorization_code', 'client_credentials', etc.",
-    )
-    is_active: Optional[bool] = Field(
-        default=None, description="Indicates whether the system URI is active"
-    )
-    name: Optional[str] = Field(default=None, description="The name of the system URI")
-    url: Optional[str] = Field(default=None, description="The URL of the system")
+    name: Optional[str] = None
+    uri: Optional[str] = None
+    type: Optional[str] = None
+    description: Optional[str] = None
+    permissions: Optional[List[str]] = None
+    is_active: Optional[bool] = None
 
 
-class UserApplicationModel(BaseModel):
-    user_id: int = Field(default=..., description="The ID of the user")
-    application_id: int = Field(default=..., description="The ID of the application")
-    permissions: Dict[str, PermissionEnum] = Field(
-        default=..., description="The permissions of the user in the application"
+class ApplicationModel(ApplicationBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserApplicationBase(BaseModel):
+    user_id: int
+    application_id: int
+    permissions: Dict[str, str] = Field(
+        ..., description="The permissions of the user in the application. Example: {'read': 'read', 'write': 'write'}"
     )
-    created_at: datetime = Field(
-        default=...,
-        description="The creation date of the user application in ISO format",
-    )
-    updated_at: Optional[datetime] = Field(
-        default=None,
-        description="The last update date of the user application in ISO format",
-    )
+
+
+class UserApplicationCreateModel(UserApplicationBase):
+    pass
+
+
+class UserApplicationUpdateModel(BaseModel):
+    permissions: Dict[str, str]
+
+
+class UserApplicationModel(UserApplicationBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserWithPermissionsModel(BaseModel):
+    user_id: int
+    username: str
+    email: Optional[str] = None
+    permissions: Dict[str, str]

@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS `applications` (
     `uri` VARCHAR(1000) NOT NULL,
     `type` VARCHAR(100) NOT NULL, -- e.g., 'all', 'internal', 'external'
     `description` VARCHAR(500) DEFAULT NULL,
+    `permissions` JSON DEFAULT NULL, -- List of available permissions for this app | ["read", "write", "approve"]
     `is_active` BOOLEAN DEFAULT TRUE,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

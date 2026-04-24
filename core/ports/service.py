@@ -9,6 +9,15 @@ from core.models.oauth_models import (
     TokenUpdateModel,
 )
 from core.models.user_models import MicrosoftUserIdentity
+from core.models.application_models import (
+    ApplicationModel,
+    ApplicationCreateModel,
+    ApplicationUpdateModel,
+    UserApplicationModel,
+    UserApplicationCreateModel,
+    UserApplicationUpdateModel,
+    UserWithPermissionsModel,
+)
 
 
 class ITokenService(ABC):
@@ -212,3 +221,84 @@ class IMicrosoftAuthService(ABC):
             The raw bytes of the image, or None if no picture is set or the call fails.
         """
         ...
+
+
+class IApplicationService(ABC):
+    """Abstract interface for application service operations"""
+
+    @abstractmethod
+    async def create_application(
+        self, app_data: ApplicationCreateModel
+    ) -> ApplicationModel:
+        """Create a new application"""
+        pass
+
+    @abstractmethod
+    async def get_application_by_id(self, app_id: int) -> ApplicationModel:
+        """Get application by ID"""
+        pass
+
+    @abstractmethod
+    async def list_applications(self) -> List[ApplicationModel]:
+        """List all applications"""
+        pass
+
+    @abstractmethod
+    async def update_application(
+        self, app_id: int, app_data: ApplicationUpdateModel
+    ) -> ApplicationModel:
+        """Update an existing application"""
+        pass
+
+    @abstractmethod
+    async def delete_application(self, app_id: int) -> None:
+        """Delete an application by ID"""
+        pass
+
+    @abstractmethod
+    async def link_user_to_application(
+        self, link_data: UserApplicationCreateModel
+    ) -> UserApplicationModel:
+        """Link a user to an application"""
+        pass
+
+    @abstractmethod
+    async def unlink_user_from_application(self, user_id: int, app_id: int) -> None:
+        """Unlink a user from an application"""
+        pass
+
+    @abstractmethod
+    async def update_user_permissions(
+        self, user_id: int, app_id: int, permissions: UserApplicationUpdateModel
+    ) -> UserApplicationModel:
+        """Update user permissions for a specific application"""
+        pass
+
+    @abstractmethod
+    async def get_user_permissions(
+        self, user_id: int, app_id: int
+    ) -> UserApplicationModel:
+        """Get user permissions for a specific application"""
+        pass
+
+    @abstractmethod
+    async def list_user_applications(self, user_id: int) -> List[ApplicationModel]:
+        """List all applications linked to a specific user"""
+        pass
+
+    @abstractmethod
+    async def get_application_users_permissions(
+        self, app_id: int
+    ) -> List[UserWithPermissionsModel]:
+        """Get all users and their permissions for a specific application"""
+        pass
+
+    @abstractmethod
+    async def get_application_permissions(self, app_id: int) -> List[str]:
+        """Get the list of available permissions for an application"""
+        pass
+
+    @abstractmethod
+    async def check_user_access(self, user_id: int, app_id: int) -> bool:
+        """Check if a user has access to an application (manual link or public)"""
+        pass

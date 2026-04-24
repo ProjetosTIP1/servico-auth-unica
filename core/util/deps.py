@@ -13,6 +13,7 @@ from core.ports.repository import (
     ITokenRepository,
     ISgaRepository,
     ISamIntegrationRepository,
+    IApplicationRepository,
 )
 from core.helpers.authentication_helper import validate_token
 from typing import Annotated
@@ -35,12 +36,14 @@ from core.infrastructure.integration_adapters import (
 
 from core.repositories.user_repository import UserRepository
 from core.repositories.token_repository import TokenRepository
+from core.repositories.application_repository import ApplicationRepository
 from core.models.user_models import MicrosoftUserIdentity, UserType
 from core.ports.service import IMicrosoftAuthService
 
 from core.services.microsoft_login_service import MicrosoftLoginService
 from core.services.token_service import TokenService as TokenServiceImpl
 from core.services.user_service import UserService as UserServiceImpl
+from core.services.application_service import ApplicationService as ApplicationServiceImpl
 from core.services.image_usecase import ImageUsecase
 from integration.integration_service import IntegrationService
 
@@ -122,6 +125,21 @@ def get_user_service(
 ) -> UserServiceImpl:
     """Provide a fully wired `UserService` to the route handler."""
     return UserServiceImpl(user_repository=user_repository, db=mariadb)
+
+
+def get_application_repository() -> IApplicationRepository:
+    """Provide a new instance of the ApplicationRepository."""
+    return ApplicationRepository()
+
+
+def get_application_service(
+    application_repository: IApplicationRepository = Depends(get_application_repository),
+    mariadb: IDatabase = Depends(get_mariadb_database),
+) -> ApplicationServiceImpl:
+    """Provide a fully wired `ApplicationService` to the route handler."""
+    return ApplicationServiceImpl(
+        application_repository=application_repository, db=mariadb
+    )
 
 
 def get_image_usecase() -> ImageUsecase:
@@ -238,6 +256,39 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_optional(
+    token: Annotated[str | None, Depends(get_token_from_request)],
+    user_repo: Annotated[IUserRepository, Depends(get_user_repository)],
+    token_repo: Annotated[ITokenRepository, Depends(get_token_repository)],
+    mariadb: Annotated[IDatabase, Depends(get_mariadb_database)],
+) -> UserType | None:
+    """Version of get_current_user that doesn't raise if token is missing/invalid."""
+    if token is None:
+        return None
+
+    try:
+        payload = validate_token(token)
+        if payload is None or payload.get("type") != "access":
+            return None
+
+        cpf_cnpj = payload.get("sub")
+        if cpf_cnpj is None:
+            return None
+
+        async with mariadb.transaction() as txn:
+            token_model = await token_repo.get_token_by_string(txn, token)
+            if token_model is None or token_model.revoked:
+                return None
+
+            user: UserType | None = await user_repo.get_user_by_cpfcnpj(txn, cpf_cnpj)
+            if user is None or not user.is_active:
+                return None
+
+            return user
+    except Exception:
+        return None
+
+
 def get_current_token(
     token: Annotated[str | None, Depends(get_token_from_request)],
 ) -> str | None:
@@ -271,6 +322,9 @@ async def require_microsoft_user(
 AuthenticatedUser = Annotated[UserType, Depends(get_current_user)]
 TokenServiceDeps = Annotated[ITokenService, Depends(get_token_service)]
 UserServiceDeps = Annotated[UserServiceImpl, Depends(get_user_service)]
+ApplicationServiceDeps = Annotated[
+    ApplicationServiceImpl, Depends(get_application_service)
+]
 ImageUsecaseDeps = Annotated[ImageUsecase, Depends(get_image_usecase)]
 DatabaseDeps = Annotated[IDatabase, Depends(get_mariadb_database)]
 DatabaseManagerDeps = Annotated[DatabaseManager, Depends(get_database_manager)]
