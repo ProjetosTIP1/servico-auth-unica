@@ -122,6 +122,11 @@ class IUserService(ABC):
         """Soft delete a user by ID"""
         pass
 
+    @abstractmethod
+    async def count_active_users(self) -> int:
+        """Count all active users"""
+        pass
+
 
 class IIntegrationService(ABC):
     """Orchestrates the synchronization between SGA and SAM"""

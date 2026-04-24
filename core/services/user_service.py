@@ -220,3 +220,10 @@ class UserService(IUserService):
                 await self.user_repository.delete_user(txn, user_id)
         except Exception as e:
             raise Exception(f"Error in service layer while deleting user: {e}")
+
+    async def count_active_users(self) -> int:
+        try:
+            async with self.db.transaction() as txn:
+                return await self.user_repository.count_active_users(txn)
+        except Exception as e:
+            raise Exception(f"Error in service layer while counting active users: {e}")

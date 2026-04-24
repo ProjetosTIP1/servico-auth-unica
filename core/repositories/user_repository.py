@@ -214,3 +214,14 @@ class UserRepository(IUserRepository):
             await txn.execute(query, {"id": user_id})
         except Exception as e:
             raise Exception(f"Error deleting user: {e}")
+
+    async def count_active_users(self, txn: ITransaction) -> int:
+        """Count all active users"""
+        try:
+            query = "SELECT COUNT(*) as count FROM users WHERE is_active = 1"
+            results = await txn.execute(query)
+            if results:
+                return results[0]["count"]
+            return 0
+        except Exception as e:
+            raise Exception(f"Error counting active users: {e}")

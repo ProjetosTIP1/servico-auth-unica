@@ -136,6 +136,11 @@ class IUserRepository(ABC):
         """Soft delete a user by ID"""
         pass
 
+    @abstractmethod
+    async def count_active_users(self, txn: ITransaction) -> int:
+        """Count all active users"""
+        pass
+
 
 class ISgaRepository(ABC):
     """Interface for extracting data from SGA (SQL Server) using Polars"""
