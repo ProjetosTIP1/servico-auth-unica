@@ -59,10 +59,10 @@ class TestImageUsecase:
         mock_txn.execute.assert_called_once()
         args, kwargs = mock_txn.execute.call_args
         assert "UPDATE users" in args[0]
-        assert "SET profile_pic_url =" in args[0]
+        assert "SET profile_picture_url =" in args[0]
         assert "WHERE id =" in args[0]
-        assert "fakeuuid.jpg" in args[1][0]
-        assert args[1][1] == user_id
+        assert "fakeuuid.jpg" in args[1]["file_path"]
+        assert args[1]["id"] == user_id
         
         # 3. File was saved
         mock_makedirs.assert_called_with("images", exist_ok=True)
@@ -100,7 +100,8 @@ class TestImageUsecase:
         # Assert
         mock_txn.execute.assert_called_once()
         args, _ = mock_txn.execute.call_args
-        assert "bytesuuid.png" in args[1][0]
+        assert "bytesuuid.png" in args[1]["file_path"]
+        assert args[1]["id"] == user_id
         mock_txn.commit.assert_called_once()
 
     @patch("core.services.image_usecase.filetype.guess")

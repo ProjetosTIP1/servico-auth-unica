@@ -2,7 +2,7 @@ import os
 import filetype
 import aiofiles
 from io import BytesIO
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 from uuid import uuid4
 from fastapi import UploadFile
 
@@ -19,10 +19,12 @@ MIME_TO_EXT = {
 }
 
 
+
+@runtime_checkable
 class FileLike(Protocol):
-    def read(self, size: int = -1) -> bytes: ...
-    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int: ...
-    def tell(self) -> int: ...
+    def read(self, size: int = -1, /) -> bytes: ...
+    def seek(self, offset: int, whence: int = 0, /) -> int: ...
+    def tell(self, /) -> int: ...
 
 
 class ImageUsecase:
@@ -61,10 +63,10 @@ class ImageUsecase:
 
         query = """
         UPDATE users
-        SET profile_pic_url = %s
-        WHERE id = %s
+        SET profile_picture_url = :file_path
+        WHERE id = :id
         """
-        await txn.execute(query, (file_path, user_id))
+        await txn.execute(query, {"file_path": file_path, "id": user_id})
         await self._save_pic_file(file, file_name)
 
     async def _save_pic_file(self, file: FileLike, file_name: str) -> None:
