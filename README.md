@@ -15,6 +15,7 @@ Microsserviço centralizado de autenticação construído com **FastAPI**, respo
 - [Executando o Projeto](#executando-o-projeto)
 - [Endpoints da API](#endpoints-da-api)
 - [Integração SGA ↔ SAM](#integração-sga--sam)
+- [Guia de Integração para Desenvolvedores](#guia-de-integração-para-desenvolvedores)
 - [Fluxos de Autenticação](#fluxos-de-autenticação)
   - [Fluxo 1 — Login com e-mail e senha](#fluxo-1--login-com-e-mail-e-senha)
   - [Fluxo 2 — Login via Microsoft (MSAL)](#fluxo-2--login-via-microsoft-msal)
@@ -307,6 +308,20 @@ Antes de aplicar mudanças reais, você pode testar o que será alterado usando 
 curl -X POST "http://localhost:8000/integration/sync-all?dry_run=true"
 ```
 O resultado será exibido nos logs da aplicação detalhando a quantidade de registros que seriam afetados.
+
+---
+
+## Guia de Integração para Desenvolvedores
+
+Se você está desenvolvendo um frontend ou uma aplicação satélite que precisa de autenticação via SAM, consulte o nosso guia detalhado:
+
+👉 **[Plano de Integração SAM](docs/INTEGRATION.md)**
+
+O guia cobre:
+- Como registrar sua aplicação.
+- Fluxos de login (Frontend SPA e Redirecionamento).
+- Validação de tokens JWT.
+- Consumo de permissões por aplicação.
 
 ---
 
