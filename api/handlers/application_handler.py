@@ -120,6 +120,44 @@ async def link_user_to_application(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+@application_router.post("/{app_id}/users/bulk-link")
+async def bulk_link_users(
+    authenticated_user: AuthenticatedUser,
+    app_id: int,
+    service: ApplicationServiceDeps,
+    search: str = "",
+):
+    """Link all users (optionally filtered by search) to an application. Only accessible by managers."""
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        await service.bulk_link_users(app_id, search)
+        return {"message": "Users linked successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@application_router.delete("/{app_id}/users/bulk-unlink")
+async def bulk_unlink_users(
+    authenticated_user: AuthenticatedUser,
+    app_id: int,
+    service: ApplicationServiceDeps,
+):
+    """Unlink all users from an application. Only accessible by managers."""
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        await service.bulk_unlink_users(app_id)
+        return {"message": "Users unlinked successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @application_router.delete("/{app_id}/users/{user_id}", response_model=ResponseModel)
 async def unlink_user_from_application(
     authenticated_user: AuthenticatedUser,
@@ -192,3 +230,25 @@ async def list_user_applications(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@application_router.get(
+    "/{app_id}/available-users", response_model=List[UserWithPermissionsModel]
+)
+async def list_available_users(
+    authenticated_user: AuthenticatedUser,
+    app_id: int,
+    service: ApplicationServiceDeps,
+    search: str = "",
+):
+    """List all active users NOT linked to an application, with optional search filtering. Only accessible by managers."""
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        return await service.get_available_users(app_id, search)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+

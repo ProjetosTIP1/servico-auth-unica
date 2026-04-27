@@ -307,3 +307,20 @@ class IApplicationService(ABC):
     async def check_user_access(self, user_id: int, app_id: int) -> bool:
         """Check if a user has access to an application (manual link or public)"""
         pass
+
+    @abstractmethod
+    async def get_available_users(
+        self, app_id: int, search_query: str = ""
+    ) -> List[UserWithPermissionsModel]:
+        """Get all active users NOT linked to a specific application, with optional search filtering"""
+        pass
+
+    @abstractmethod
+    async def bulk_link_users(self, app_id: int, search_query: str = "") -> int:
+        """Link all users (optionally filtered) to an application."""
+        pass
+
+    @abstractmethod
+    async def bulk_unlink_users(self, app_id: int) -> int:
+        """Unlink all users from an application."""
+        pass

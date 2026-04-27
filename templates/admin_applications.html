@@ -3,329 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAM - Applications</title>
+    <title>SAM - Aplicações</title>
     <link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #fffcff;
-            --inverted: #28282b;
-            --secondary: #f2f2f2;
-            --tertiary: #96e6b3;
-            --surface: #efefef;
-            --text: #0d2818;
-            --border: #627264;
-            --accent: #627264;
-            --glass: rgba(140, 175, 156, 0.3);
-            --red: #ef3054;
-            --radius: 8px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Chivo', sans-serif;
-        }
-
-        body {
-            background-color: var(--primary);
-            color: var(--text);
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* Sidebar (Same as dashboard) */
-        .sidebar {
-            width: 260px;
-            background: var(--inverted);
-            display: flex;
-            flex-direction: column;
-            padding: 1.5rem;
-            position: fixed;
-            height: 100vh;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.25rem;
-            font-weight: 900;
-            margin-bottom: 3rem;
-            color: var(--tertiary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo-box {
-            width: 32px;
-            height: 32px;
-            background: var(--tertiary);
-            color: var(--inverted);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            border-radius: var(--radius);
-            color: #a1a1aa;
-            text-decoration: none;
-            margin-bottom: 0.25rem;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            font-size: 0.9375rem;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: rgba(150, 230, 179, 0.1);
-            color: var(--tertiary);
-        }
-
-        .nav-item svg {
-            margin-right: 12px;
-            width: 18px;
-            height: 18px;
-        }
-
-        /* Main Content */
-        .main {
-            flex: 1;
-            margin-left: 260px;
-            padding: 2.5rem;
-            background: var(--primary);
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--secondary);
-        }
-
-        .header-title h1 {
-            font-size: 1.75rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
-
-        .btn-add {
-            background: var(--tertiary);
-            color: var(--text);
-            padding: 0.75rem 1.25rem;
-            border-radius: var(--radius);
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-
-        .btn-add:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(150, 230, 179, 0.3);
-        }
-
-        /* Table */
-        .table-container {
-            background: white;
-            border-radius: var(--radius);
-            border: 1px solid var(--secondary);
-            overflow: hidden;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        th {
-            background: var(--surface);
-            padding: 1rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--accent);
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--secondary);
-            font-size: 0.9375rem;
-        }
-
-        .badge-type {
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: var(--secondary);
-            color: var(--accent);
-        }
-
-        .status-active {
-            color: #16a34a;
-            font-weight: 700;
-        }
-
-        .status-inactive {
-            color: var(--red);
-            font-weight: 700;
-        }
-
-        .actions {
-            display: flex;
-            gap: 12px;
-        }
-
-        .btn-action {
-            padding: 6px;
-            border-radius: 6px;
-            border: 1px solid var(--secondary);
-            background: white;
-            cursor: pointer;
-            color: var(--accent);
-            transition: all 0.2s;
-        }
-
-        .btn-action:hover {
-            border-color: var(--tertiary);
-            color: var(--text);
-            background: var(--surface);
-        }
-
-        .btn-action.btn-delete:hover {
-            border-color: var(--red);
-            color: var(--red);
-            background: rgba(239, 48, 84, 0.05);
-        }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(13, 40, 24, 0.4);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal {
-            background: white;
-            width: 100%;
-            max-width: 500px;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-        }
-
-        .modal-header {
-            margin-bottom: 1.5rem;
-        }
-
-        .modal-header h2 {
-            font-weight: 800;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--accent);
-        }
-
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--tertiary);
-            border-radius: var(--radius);
-            outline: none;
-            font-size: 0.9375rem;
-        }
-
-        .modal-footer {
-            margin-top: 2rem;
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        .btn-cancel {
-            background: var(--secondary);
-            color: var(--text);
-            padding: 0.75rem 1.25rem;
-            border-radius: var(--radius);
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .btn-save {
-            background: var(--tertiary);
-            color: var(--text);
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius);
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-        }
-    </style>
+    {% include 'components/admin_applications_styles.html' %}
 </head>
 <body>
-    <div class="sidebar">
-        <div class="logo">
-            <div class="logo-box">L</div>
-            SAM
-        </div>
-        <nav style="flex: 1; display: flex; flex-direction: column;">
-            <a href="/admin/dashboard" class="nav-item">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                Dashboard
-            </a>
-            <a href="#" class="nav-item">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                Users
-            </a>
-            <a href="/admin/applications" class="nav-item active">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                Applications
-            </a>
-            <div style="flex: 1;"></div>
-            <a id="logout" class="nav-item btn-logout" style="color: #fca5a5; cursor: pointer;">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                Log Out
-            </a>
-        </nav>
-    </div>
+    {% with active_page='applications' %}
+        {% include 'components/admin_sidebar.html' %}
+    {% endwith %}
 
     <div class="main">
         <header>
             <div class="header-title">
-                <h1>Applications</h1>
+                <h1>Aplicações</h1>
             </div>
             <button class="btn-add" onclick="openModal()">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                New Application
+                Nova Aplicação
             </button>
         </header>
 
@@ -333,11 +27,11 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Type</th>
+                        <th>Nome</th>
+                        <th>Tipo</th>
                         <th>URI</th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -357,6 +51,9 @@
                             <button class="btn-action" onclick='editApp({{ app | tojson }})' title="Edit">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
+                            <button class="btn-action" onclick='openUserModal({{ app.id }}, "{{ app.name }}")' title="Manage Users">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            </button>
                             {% if app.is_active %}
                             <button class="btn-action btn-delete" onclick='toggleStatus({{ app.id }}, false)' title="Deactivate">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
@@ -374,130 +71,9 @@
         </div>
     </div>
 
-    <!-- App Modal -->
-    <div id="appModal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="modalTitle">New Application</h2>
-            </div>
-            <form id="appForm">
-                <input type="hidden" id="app_id">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="name" required placeholder="e.g. Finance Dashboard">
-                </div>
-                <div class="form-group">
-                    <label>URI</label>
-                    <input type="text" id="uri" required placeholder="https://app.yourdomain.com">
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select id="type" required>
-                        <option value="all">Public (All Users)</option>
-                        <option value="restricted">Restricted (Manual Link)</option>
-                        <option value="internal">Internal Only</option>
-                        <option value="external">External Only</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="description" rows="3" placeholder="Briefly describe the application..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Permissions (Comma separated)</label>
-                    <input type="text" id="permissions" placeholder="read, write, admin">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn-save">Save Application</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    {% include 'components/application_modal.html' %}
+    {% include 'components/user_mgmt_modal.html' %}
 
-    <script>
-        const modal = document.getElementById('appModal');
-        const form = document.getElementById('appForm');
-
-        function openModal() {
-            document.getElementById('modalTitle').innerText = 'New Application';
-            form.reset();
-            document.getElementById('app_id').value = '';
-            modal.style.display = 'flex';
-        }
-
-        function closeModal() {
-            modal.style.display = 'none';
-        }
-
-        function editApp(app) {
-            document.getElementById('modalTitle').innerText = 'Edit Application';
-            document.getElementById('app_id').value = app.id;
-            document.getElementById('name').value = app.name;
-            document.getElementById('uri').value = app.uri;
-            document.getElementById('type').value = app.type;
-            document.getElementById('description').value = app.description || '';
-            document.getElementById('permissions').value = (app.permissions || []).join(', ');
-            modal.style.display = 'flex';
-        }
-
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('app_id').value;
-            const data = {
-                name: document.getElementById('name').value,
-                uri: document.getElementById('uri').value,
-                type: document.getElementById('type').value,
-                description: document.getElementById('description').value,
-                permissions: document.getElementById('permissions').value.split(',').map(p => p.trim()).filter(p => p),
-                is_active: true
-            };
-
-            const url = id ? `/applications/${id}` : '/applications';
-            const method = id ? 'PUT' : 'POST';
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    const err = await response.json();
-                    alert(err.detail || 'Error saving application');
-                }
-            } catch (err) {
-                alert('Connection error');
-            }
-        };
-
-        async function toggleStatus(id, active) {
-            if (!confirm(`Are you sure you want to ${active ? 'activate' : 'deactivate'} this application?`)) return;
-            
-            try {
-                const response = await fetch(`/applications/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ is_active: active })
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    alert('Error updating status');
-                }
-            } catch (err) {
-                alert('Connection error');
-            }
-        }
-
-        document.getElementById('logout').onclick = async () => {
-            await fetch('/o/logout', { method: 'POST' });
-            window.location.href = '/admin/login';
-        };
-    </script>
+    {% include 'components/admin_applications_scripts.html' %}
 </body>
 </html>

@@ -244,7 +244,7 @@ class ApplicationRepository(IApplicationRepository):
         """Get all users and their permissions for a specific application"""
         try:
             query = """
-            SELECT u.id as user_id, u.username, u.email, ua.permissions
+            SELECT u.id as user_id, u.username, u.email, u.full_name, u.cpf_cnpj, ua.permissions
             FROM users u
             JOIN user_applications ua ON u.id = ua.user_id
             WHERE ua.application_id = :app_id
@@ -259,3 +259,88 @@ class ApplicationRepository(IApplicationRepository):
             return final_results
         except Exception as e:
             raise Exception(f"Error fetching application users permissions: {e}")
+
+    async def get_users_not_in_application(
+        self, txn: ITransaction, app_id: int, search_query: str = ""
+    ) -> list[UserWithPermissionsModel]:
+        """Get all active users NOT linked to a specific application, with optional search filtering"""
+        try:
+            params: dict[str, object] = {"app_id": app_id}
+
+            search_clause = ""
+            if search_query.strip():
+                search_clause = (
+                    "AND (u.full_name LIKE :search OR u.cpf_cnpj LIKE :search)"
+                )
+                params["search"] = f"%{search_query.strip()}%"
+
+            query = f"""
+            SELECT u.id as user_id, u.username, u.email, u.full_name, u.cpf_cnpj
+            FROM users u
+            WHERE u.is_active = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_applications ua
+                  WHERE ua.user_id = u.id AND ua.application_id = :app_id
+              )
+              {search_clause}
+            ORDER BY u.full_name
+            """
+            results = await txn.execute(query, params)
+            return [
+                UserWithPermissionsModel(
+                    user_id=row["user_id"],
+                    username=row["username"],
+                    email=row.get("email"),
+                    full_name=row.get("full_name"),
+                    cpf_cnpj=row.get("cpf_cnpj"),
+                    permissions={},
+                )
+                for row in results
+            ]
+        except Exception as e:
+            raise Exception(f"Error fetching users not in application: {e}")
+
+    async def bulk_link_all_users(
+        self, txn: ITransaction, app_id: int, search_query: str = ""
+    ) -> int:
+        """Link all users (optionally filtered by search) to an application."""
+        try:
+            params: dict[str, object] = {"app_id": app_id}
+            search_clause = ""
+            if search_query.strip():
+                search_clause = (
+                    "AND (u.full_name LIKE :search OR u.cpf_cnpj LIKE :search)"
+                )
+                params["search"] = f"%{search_query.strip()}%"
+
+            # INSERT INTO user_applications (user_id, application_id, permissions)
+            # SELECT u.id, :app_id, '{}'
+            # FROM users u
+            # WHERE u.is_active = 1
+            # AND NOT EXISTS (SELECT 1 FROM user_applications ua WHERE ua.user_id = u.id AND ua.application_id = :app_id)
+            query = f"""
+            INSERT INTO user_applications (user_id, application_id, permissions)
+            SELECT u.id, :app_id, '{{}}'
+            FROM users u
+            WHERE u.is_active = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_applications ua
+                  WHERE ua.user_id = u.id AND ua.application_id = :app_id
+              )
+              {search_clause}
+            """
+            await txn.execute(query, params)
+            # Note: Depending on the driver, we might want to return the number of rows. 
+            # In our case, txn.execute just runs the query.
+            return 0 # We don't strictly need the count for now, but returning 0 is safe.
+        except Exception as e:
+            raise Exception(f"Error in bulk linking users: {e}")
+
+    async def bulk_unlink_all_users(self, txn: ITransaction, app_id: int) -> int:
+        """Unlink all users from an application."""
+        try:
+            query = "DELETE FROM user_applications WHERE application_id = :app_id"
+            await txn.execute(query, {"app_id": app_id})
+            return 0
+        except Exception as e:
+            raise Exception(f"Error in bulk unlinking users: {e}")

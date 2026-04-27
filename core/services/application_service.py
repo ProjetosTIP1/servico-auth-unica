@@ -237,3 +237,34 @@ class ApplicationService(IApplicationService):
                 return permissions is not None
         except Exception as e:
             raise Exception(f"Error in service layer while checking user access: {e}")
+
+    async def get_available_users(
+        self, app_id: int, search_query: str = ""
+    ) -> List[UserWithPermissionsModel]:
+        try:
+            async with self.db.transaction() as txn:
+                return await self.application_repository.get_users_not_in_application(
+                    txn, app_id, search_query
+                )
+        except Exception as e:
+            raise Exception(
+                f"Error in service layer while fetching available users: {e}"
+            )
+
+    async def bulk_link_users(self, app_id: int, search_query: str = "") -> int:
+        try:
+            async with self.db.transaction() as txn:
+                return await self.application_repository.bulk_link_all_users(
+                    txn, app_id, search_query
+                )
+        except Exception as e:
+            raise Exception(f"Error in service layer while bulk linking users: {e}")
+
+    async def bulk_unlink_users(self, app_id: int) -> int:
+        try:
+            async with self.db.transaction() as txn:
+                return await self.application_repository.bulk_unlink_all_users(
+                    txn, app_id
+                )
+        except Exception as e:
+            raise Exception(f"Error in service layer while bulk unlinking users: {e}")

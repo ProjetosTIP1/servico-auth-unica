@@ -1,0 +1,41 @@
+<div id="userModal" class="modal-overlay">
+    <div class="modal modal-wide">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="userModalTitle">Gerenciar Usuários</h2>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn-action" onclick="bulkAddUsers()" style="color: #16a34a; border-color: #bbf7d0; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    Adicionar Todos
+                </button>
+                <button type="button" class="btn-action btn-delete" onclick="bulkRemoveUsers()" style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Remover Todos
+                </button>
+            </div>
+        </div>
+        <input type="text" id="userSearch" class="user-mgmt-search" placeholder="Search by name, CPF or CNPJ..." autocomplete="off">
+        <div class="user-mgmt-panels">
+            <div class="user-panel">
+                <div class="user-panel-header">
+                    <span>Disponíveis</span>
+                    <span class="count" id="availableCount">0</span>
+                </div>
+                <div class="user-panel-list" id="availableList">
+                    <div class="user-panel-empty">Pesquise por usuários para adicionar</div>
+                </div>
+            </div>
+            <div class="user-panel">
+                <div class="user-panel-header">
+                    <span>Atribuídos</span>
+                    <span class="count" id="assignedCount">0</span>
+                </div>
+                <div class="user-panel-list" id="assignedList">
+                    <div class="user-panel-empty">Nenhum usuário atribuído</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" onclick="closeUserModal()">Fechar</button>
+        </div>
+    </div>
+</div>

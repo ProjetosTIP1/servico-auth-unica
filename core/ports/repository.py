@@ -280,3 +280,22 @@ class IApplicationRepository(ABC):
     ) -> List[UserWithPermissionsModel]:
         """Get all users and their permissions for a specific application"""
         pass
+
+    @abstractmethod
+    async def get_users_not_in_application(
+        self, txn: ITransaction, app_id: int, search_query: str = ""
+    ) -> List[UserWithPermissionsModel]:
+        """Get all active users NOT linked to a specific application, with optional search filtering"""
+        pass
+
+    @abstractmethod
+    async def bulk_link_all_users(
+        self, txn: ITransaction, app_id: int, search_query: str = ""
+    ) -> int:
+        """Link all users (optionally filtered by search) to an application. Returns number of linked users."""
+        pass
+
+    @abstractmethod
+    async def bulk_unlink_all_users(self, txn: ITransaction, app_id: int) -> int:
+        """Unlink all users from an application. Returns number of unlinked users."""
+        pass

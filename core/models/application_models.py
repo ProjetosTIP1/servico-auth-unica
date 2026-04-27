@@ -74,4 +74,6 @@ class UserWithPermissionsModel(BaseModel):
     user_id: int
     username: str
     email: Optional[str] = None
+    full_name: Optional[str] = None
+    cpf_cnpj: Optional[str] = None
     permissions: Dict[str, str]

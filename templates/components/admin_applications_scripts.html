@@ -1,0 +1,278 @@
+<script>
+    const modal = document.getElementById('appModal');
+    const form = document.getElementById('appForm');
+
+    function openModal() {
+        document.getElementById('modalTitle').innerText = 'Nova Aplicação';
+        form.reset();
+        document.getElementById('app_id').value = '';
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    function editApp(app) {
+        document.getElementById('modalTitle').innerText = 'Editar Aplicação';
+        document.getElementById('app_id').value = app.id;
+        document.getElementById('name').value = app.name;
+        document.getElementById('uri').value = app.uri;
+        document.getElementById('type').value = app.type;
+        document.getElementById('description').value = app.description || '';
+        document.getElementById('permissions').value = (app.permissions || []).join(', ');
+        modal.style.display = 'flex';
+    }
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('app_id').value;
+        const data = {
+            name: document.getElementById('name').value,
+            uri: document.getElementById('uri').value,
+            type: document.getElementById('type').value,
+            description: document.getElementById('description').value,
+            permissions: document.getElementById('permissions').value.split(',').map(p => p.trim()).filter(p => p),
+            is_active: true
+        };
+
+        const url = id ? `/applications/${id}` : '/applications';
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const err = await response.json();
+                alert(err.detail || 'Error saving application');
+            }
+        } catch (err) {
+            alert('Connection error');
+        }
+    };
+
+    async function toggleStatus(id, active) {
+        if (!confirm(`Are you sure you want to ${active ? 'activate' : 'deactivate'} this application?`)) return;
+        
+        try {
+            const response = await fetch(`/applications/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_active: active })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error updating status');
+            }
+        } catch (err) {
+            alert('Connection error');
+        }
+    }
+
+    document.getElementById('logout').onclick = async () => {
+        await fetch('/o/logout', { method: 'POST' });
+        window.location.href = '/admin/login';
+    };
+
+    // ── User Management Modal ─────────────────────────────────────────
+    const userModal = document.getElementById('userModal');
+    let currentAppId = null;
+    let debounceTimer = null;
+
+    async function openUserModal(appId, appName) {
+        currentAppId = appId;
+        document.getElementById('userModalTitle').innerText = `Manage Users — ${appName}`;
+        document.getElementById('userSearch').value = '';
+        userModal.style.display = 'flex';
+        await refreshBothLists();
+    }
+
+    function closeUserModal() {
+        userModal.style.display = 'none';
+        currentAppId = null;
+    }
+
+    // Debounced search
+    document.getElementById('userSearch').addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => refreshBothLists(e.target.value), 300);
+    });
+
+    async function refreshBothLists(search = '') {
+        await Promise.all([
+            fetchAvailableUsers(search),
+            fetchAssignedUsers(search),
+        ]);
+    }
+
+    async function fetchAvailableUsers(search = '') {
+        const list = document.getElementById('availableList');
+        const count = document.getElementById('availableCount');
+        list.innerHTML = '<div class="user-panel-empty">Loading...</div>';
+
+        try {
+            const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+            const res = await fetch(`/applications/${currentAppId}/available-users${qs}`);
+            const users = await res.json();
+            count.textContent = users.length;
+
+            if (users.length === 0) {
+                list.innerHTML = '<div class="user-panel-empty">No available users found</div>';
+                return;
+            }
+
+            list.innerHTML = users.map(u => `
+                <div class="user-row">
+                    <div class="user-info">
+                        <span class="user-name">${escapeHtml(u.full_name || u.username)}</span>
+                        <span class="user-doc">${escapeHtml(u.cpf_cnpj || u.email || '')}</span>
+                    </div>
+                    <button class="btn-toggle-user btn-add-user" onclick="addUser(${u.user_id})" title="Add to application">
+                        + Add
+                    </button>
+                </div>
+            `).join('');
+        } catch {
+            list.innerHTML = '<div class="user-panel-empty">Error loading users</div>';
+        }
+    }
+
+    async function fetchAssignedUsers(search = '') {
+        const list = document.getElementById('assignedList');
+        const count = document.getElementById('assignedCount');
+        list.innerHTML = '<div class="user-panel-empty">Loading...</div>';
+
+        try {
+            const res = await fetch(`/applications/${currentAppId}/users`);
+            let users = await res.json();
+
+            // Client-side filter for assigned list
+            if (search.trim()) {
+                const q = search.toLowerCase();
+                users = users.filter(u =>
+                    (u.full_name || '').toLowerCase().includes(q) ||
+                    (u.cpf_cnpj || '').includes(q) ||
+                    (u.username || '').toLowerCase().includes(q)
+                );
+            }
+
+            count.textContent = users.length;
+
+            if (users.length === 0) {
+                list.innerHTML = '<div class="user-panel-empty">No users assigned</div>';
+                return;
+            }
+
+            list.innerHTML = users.map(u => `
+                <div class="user-row">
+                    <div class="user-info">
+                        <span class="user-name">${escapeHtml(u.full_name || u.username)}</span>
+                        <span class="user-doc">${escapeHtml(u.cpf_cnpj || u.email || '')}</span>
+                    </div>
+                    <button class="btn-toggle-user btn-remove-user" onclick="removeUser(${u.user_id})" title="Remove from application">
+                        − Remove
+                    </button>
+                </div>
+            `).join('');
+        } catch {
+            list.innerHTML = '<div class="user-panel-empty">Error loading users</div>';
+        }
+    }
+
+    async function addUser(userId) {
+        try {
+            const res = await fetch('/applications/link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    application_id: currentAppId,
+                    permissions: {}
+                })
+            });
+            if (res.ok) {
+                const search = document.getElementById('userSearch').value;
+                await refreshBothLists(search);
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Error adding user');
+            }
+        } catch {
+            alert('Connection error');
+        }
+    }
+
+    async function removeUser(userId) {
+        try {
+            const res = await fetch(`/applications/${currentAppId}/users/${userId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                const search = document.getElementById('userSearch').value;
+                await refreshBothLists(search);
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Error removing user');
+            }
+        } catch {
+            alert('Connection error');
+        }
+    }
+
+    async function bulkAddUsers() {
+        const search = document.getElementById('userSearch').value;
+        const confirmMsg = search 
+            ? `Are you sure you want to add all users matching "${search}"?` 
+            : "Are you sure you want to add ALL active users to this application?";
+        
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+            const res = await fetch(`/applications/${currentAppId}/users/bulk-link${qs}`, {
+                method: 'POST'
+            });
+            if (res.ok) {
+                await refreshBothLists(search);
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Error in bulk add');
+            }
+        } catch {
+            alert('Connection error');
+        }
+    }
+
+    async function bulkRemoveUsers() {
+        if (!confirm("Are you sure you want to remove ALL users from this application?")) return;
+
+        try {
+            const res = await fetch(`/applications/${currentAppId}/users/bulk-unlink`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                const search = document.getElementById('userSearch').value;
+                await refreshBothLists(search);
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Error in bulk remove');
+            }
+        } catch {
+            alert('Connection error');
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
