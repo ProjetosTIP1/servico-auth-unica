@@ -4,6 +4,15 @@ from abc import ABC, abstractmethod
 from core.ports.infrastructure import ITransaction
 from core.models.oauth_models import TokenModel, TokenCreateModel, TokenUpdateModel
 from core.models.user_models import UserType, UserCreateType, UserUpdateType
+from core.models.application_models import (
+    ApplicationModel,
+    ApplicationCreateModel,
+    ApplicationUpdateModel,
+    UserApplicationModel,
+    UserApplicationCreateModel,
+    UserWithPermissionsModel,
+    UserApplicationDetailModel,
+)
 
 
 class ITokenRepository(ABC):
@@ -128,6 +137,16 @@ class IUserRepository(ABC):
         """Soft delete a user by ID"""
         pass
 
+    @abstractmethod
+    async def count_active_users(self, txn: ITransaction) -> int:
+        """Count all active users"""
+        pass
+
+    @abstractmethod
+    async def search_users(self, txn: ITransaction, query: str) -> List[UserType]:
+        """Search users by name or CPF/CNPJ"""
+        pass
+
 
 class ISgaRepository(ABC):
     """Interface for extracting data from SGA (SQL Server) using Polars"""
@@ -189,4 +208,111 @@ class ISamIntegrationRepository(ABC):
     @abstractmethod
     def disable_users(self, usernames: list[str]) -> int:
         """Batch disable users in SAM"""
+        pass
+
+
+class IApplicationRepository(ABC):
+    """Abstract interface for application repository operations"""
+
+    @abstractmethod
+    async def create_application(
+        self, txn: ITransaction, app_data: ApplicationCreateModel
+    ) -> ApplicationModel:
+        """Create a new application"""
+        pass
+
+    @abstractmethod
+    async def get_application_by_id(
+        self, txn: ITransaction, app_id: int
+    ) -> ApplicationModel | None:
+        """Get application by ID"""
+        pass
+
+    @abstractmethod
+    async def get_application_by_name(
+        self, txn: ITransaction, name: str
+    ) -> ApplicationModel | None:
+        """Get application by name"""
+        pass
+
+    @abstractmethod
+    async def list_applications(self, txn: ITransaction) -> List[ApplicationModel]:
+        """List all applications"""
+        pass
+
+    @abstractmethod
+    async def update_application(
+        self, txn: ITransaction, app_id: int, app_data: ApplicationUpdateModel
+    ) -> ApplicationModel:
+        """Update an existing application"""
+        pass
+
+    @abstractmethod
+    async def delete_application(self, txn: ITransaction, app_id: int) -> None:
+        """Delete an application by ID"""
+        pass
+
+    @abstractmethod
+    async def link_user_to_application(
+        self, txn: ITransaction, link_data: UserApplicationCreateModel
+    ) -> UserApplicationModel:
+        """Link a user to an application with permissions"""
+        pass
+
+    @abstractmethod
+    async def unlink_user_from_application(
+        self, txn: ITransaction, user_id: int, app_id: int
+    ) -> None:
+        """Unlink a user from an application"""
+        pass
+
+    @abstractmethod
+    async def get_user_permissions(
+        self, txn: ITransaction, user_id: int, app_id: int
+    ) -> UserApplicationModel | None:
+        """Get user permissions for a specific application"""
+        pass
+
+    @abstractmethod
+    async def list_user_applications(
+        self, txn: ITransaction, user_id: int
+    ) -> List[ApplicationModel]:
+        """List all applications linked to a specific user"""
+        pass
+
+    @abstractmethod
+    async def get_application_users_permissions(
+        self, txn: ITransaction, app_id: int
+    ) -> List[UserWithPermissionsModel]:
+        """Get all users and their permissions for a specific application"""
+        pass
+
+    @abstractmethod
+    async def list_user_applications_with_permissions(
+        self, txn: ITransaction, user_id: int
+    ) -> List[UserApplicationDetailModel]:
+        """List all applications and permissions linked to a specific user"""
+        pass
+
+    @abstractmethod
+    async def get_users_not_in_application(
+        self, txn: ITransaction, app_id: int, search_query: str = ""
+    ) -> List[UserWithPermissionsModel]:
+        """Get all active users NOT linked to a specific application, with optional search filtering"""
+        pass
+
+    @abstractmethod
+    async def bulk_link_all_users(
+        self,
+        txn: ITransaction,
+        app_id: int,
+        permissions: List[str],
+        search_query: str = "",
+    ) -> int:
+        """Link all users (optionally filtered by search) to an application. Returns number of linked users."""
+        pass
+
+    @abstractmethod
+    async def bulk_unlink_all_users(self, txn: ITransaction, app_id: int) -> int:
+        """Unlink all users from an application. Returns number of unlinked users."""
         pass

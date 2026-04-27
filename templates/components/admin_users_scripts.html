@@ -1,0 +1,233 @@
+<script>
+    let currentUser = null;
+    let searchTimeout = null;
+
+    function handleSearch(query) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            fetchUsers(query);
+        }, 300);
+    }
+
+    async function fetchUsers(query = '') {
+        try {
+            const url = query ? `/users/search?query=${encodeURIComponent(query)}` : '/users/';
+            const response = await fetch(url);
+            const users = await response.json();
+            renderUserTable(users);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+        }
+    }
+
+    function renderUserTable(users) {
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = users.map(u => `
+            <tr>
+                <td>
+                    <div class="user-info">
+                        <div class="user-avatar">${(u.full_name || u.username)[0]}</div>
+                        <div class="user-details">
+                            <div class="name">${u.full_name || u.username}</div>
+                            <div class="username">@${u.username}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="mono">${u.cpf_cnpj}</td>
+                <td>
+                    <div style="font-weight: 600;">${u.job || '-'}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">${u.unit || '-'}</div>
+                </td>
+                <td>
+                    ${u.registration_number ? 
+                        '<span class="badge-source source-sga">SGA</span>' : 
+                        '<span class="badge-source source-local">Local</span>'}
+                </td>
+                <td>
+                    ${u.is_active ? 
+                        '<span class="status-active">Ativo</span>' : 
+                        '<span class="status-inactive">Inativo</span>'}
+                </td>
+                <td class="actions">
+                    <button class="btn-action" onclick='openUserEditModal(${JSON.stringify(u)})' title="Editar Usuário">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function syncUsers() {
+        const btn = document.getElementById('syncBtn');
+        btn.disabled = true;
+        btn.classList.add('syncing');
+        btn.innerHTML = `
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Sincronizando...
+        `;
+
+        try {
+            const response = await fetch('/integration/sync-users', { method: 'POST' });
+            const result = await response.json();
+            alert(`Sincronização concluída!\nNovos/Alterados: ${result.upserted || 0}\nDesativados: ${result.disabled || 0}`);
+            fetchUsers();
+        } catch (error) {
+            console.error('Error syncing users:', error);
+            alert('Erro ao sincronizar usuários.');
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('syncing');
+            btn.innerHTML = `
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Sincronizar SGA
+            `;
+        }
+    }
+
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    async function openUserEditModal(user) {
+        currentUser = user;
+        const modal = document.getElementById('userEditModal');
+        const form = document.getElementById('userProfileForm');
+        const sgaBadge = document.getElementById('sgaBadge');
+
+        // Reset form
+        form.reset();
+        
+        // Fill data
+        form.full_name.value = user.full_name || '';
+        form.email.value = user.email || '';
+        form.cpf_cnpj.value = user.cpf_cnpj || '';
+        form.username.value = user.username || '';
+        form.job.value = user.job || '';
+        form.unit.value = user.unit || '';
+
+        // Lock fields if SGA user
+        const isSga = !!user.registration_number;
+        sgaBadge.style.display = isSga ? 'inline-block' : 'none';
+        
+        const fieldsToLock = ['full_name', 'cpf_cnpj', 'job', 'unit'];
+        fieldsToLock.forEach(field => {
+            form[field].disabled = isSga;
+        });
+
+        // Load applications
+        loadUserApplications(user.id);
+        
+        openModal('userEditModal');
+    }
+
+    async function loadUserApplications(userId) {
+        const container = document.getElementById('userAppsList');
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Carregando aplicações...</div>';
+
+        try {
+            const response = await fetch(`/users/${userId}/applications`);
+            const apps = await response.json();
+            
+            if (apps.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhuma aplicação vinculada.</div>';
+                return;
+            }
+
+            container.innerHTML = apps.map(app => `
+                <div class="app-item">
+                    <div class="app-info">
+                        <div class="app-name">${app.name}</div>
+                        <div class="app-uri">${app.uri}</div>
+                    </div>
+                    <div class="app-perms">
+                        ${(app.app_permissions || []).map(perm => `
+                            <label class="perm-checkbox">
+                                <input type="checkbox" 
+                                       data-perm="${perm}"
+                                       ${app.permissions[perm] === perm ? 'checked' : ''} 
+                                       onchange="updatePermission(event, ${userId}, ${app.application_id}, '${perm}', this.checked)">
+                                ${perm.charAt(0).toUpperCase() + perm.slice(1)}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Erro ao carregar aplicações.</div>';
+        }
+    }
+
+    async function updatePermission(event, userId, appId, perm, checked) {
+        // First get current permissions from the UI state or fetch again
+        // For simplicity, we'll assume the checkboxes reflect current state
+        const appItem = event.target.closest('.app-item');
+        const checkboxes = appItem.querySelectorAll('input[type="checkbox"]');
+        const newPermissions = {};
+        
+        checkboxes.forEach(cb => {
+            const p = cb.getAttribute('data-perm');
+            if (cb.checked) {
+                newPermissions[p] = p;
+            }
+        });
+
+        try {
+            const response = await fetch(`/users/${userId}/applications/${appId}/permissions`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ permissions: newPermissions })
+            });
+            
+            if (!response.ok) throw new Error('Failed to update permissions');
+            // Success - maybe show a small toast or just leave as is
+        } catch (error) {
+            alert('Erro ao atualizar permissões.');
+            event.target.checked = !checked; // revert
+        }
+    }
+
+    async function saveUserProfile() {
+        if (!currentUser) return;
+        
+        const form = document.getElementById('userProfileForm');
+        const formData = new FormData(form);
+        const data = {};
+        
+        // Only include enabled fields or all if we want to update everything
+        // But the backend will ignore registration_number related fields if we follow business logic
+        formData.forEach((value, key) => {
+            if (!form[key].disabled) {
+                data[key] = value;
+            }
+        });
+
+        const btn = document.getElementById('saveProfileBtn');
+        btn.disabled = true;
+        btn.textContent = 'Salvando...';
+
+        try {
+            const response = await fetch(`/users/${currentUser.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                alert('Perfil atualizado com sucesso!');
+                closeModal('userEditModal');
+                fetchUsers();
+            } else {
+                throw new Error('Update failed');
+            }
+        } catch (error) {
+            alert('Erro ao salvar perfil.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Salvar Alterações';
+        }
+    }
+</script>

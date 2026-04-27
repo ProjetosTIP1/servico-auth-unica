@@ -1,5 +1,5 @@
 import polars as pl
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, bindparam
 from core.ports.repository import ISgaRepository, ISamIntegrationRepository
 from core.helpers.logger_helper import logger
 from core.config.settings import settings
@@ -262,6 +262,6 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         with self._engine.begin() as conn:
             stmt = text(
                 "UPDATE users SET is_active = 0, updated_at = NOW() WHERE username IN :usernames"
-            )
-            result = conn.execute(stmt, {"usernames": tuple(usernames)})
+            ).bindparams(bindparam("usernames", expanding=True))
+            result = conn.execute(stmt, {"usernames": usernames})
             return result.rowcount

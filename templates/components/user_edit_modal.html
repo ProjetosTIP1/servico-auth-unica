@@ -1,0 +1,66 @@
+<div id="userEditModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="modalTitle">Gerenciar Usuário</h2>
+            <button class="btn-action" onclick="closeModal('userEditModal')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Profile Section -->
+            <div class="section-title">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                Informações do Perfil
+                <span id="sgaBadge" class="badge-source source-sga" style="display: none; margin-left: 8px;">Sincronizado via SGA</span>
+            </div>
+            
+            <form id="userProfileForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="full_name">Nome Completo</label>
+                        <input type="text" id="full_name" name="full_name" placeholder="Ex: João Silva">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">E-mail</label>
+                        <input type="email" id="email" name="email" placeholder="email@exemplo.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="cpf_cnpj">CPF / CNPJ</label>
+                        <input type="text" id="cpf_cnpj" name="cpf_cnpj" placeholder="000.000.000-00">
+                    </div>
+                    <div class="form-group">
+                        <label for="username">Usuário</label>
+                        <input type="text" id="username" name="username" placeholder="joao.silva">
+                    </div>
+                    <div class="form-group">
+                        <label for="job">Cargo</label>
+                        <input type="text" id="job" name="job" placeholder="Analista">
+                    </div>
+                    <div class="form-group">
+                        <label for="unit">Unidade / Departamento</label>
+                        <input type="text" id="unit" name="unit" placeholder="TI / Matriz">
+                    </div>
+                </div>
+            </form>
+
+            <hr style="margin: 32px 0; border: 0; border-top: 1px solid var(--border);">
+
+            <!-- Applications Section -->
+            <div class="section-title">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Aplicações e Permissões
+            </div>
+            
+            <div id="userAppsList" class="apps-list">
+                <!-- Apps will be loaded here via JS -->
+                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                    Carregando aplicações...
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-action" style="width: auto; padding: 0 20px;" onclick="closeModal('userEditModal')">Cancelar</button>
+            <button class="btn-sync" id="saveProfileBtn" onclick="saveUserProfile()">Salvar Alterações</button>
+        </div>
+    </div>
+</div>

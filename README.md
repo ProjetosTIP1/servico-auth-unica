@@ -15,6 +15,7 @@ Microsserviço centralizado de autenticação construído com **FastAPI**, respo
 - [Executando o Projeto](#executando-o-projeto)
 - [Endpoints da API](#endpoints-da-api)
 - [Integração SGA ↔ SAM](#integração-sga--sam)
+- [Guia de Integração para Desenvolvedores](#guia-de-integração-para-desenvolvedores)
 - [Fluxos de Autenticação](#fluxos-de-autenticação)
   - [Fluxo 1 — Login com e-mail e senha](#fluxo-1--login-com-e-mail-e-senha)
   - [Fluxo 2 — Login via Microsoft (MSAL)](#fluxo-2--login-via-microsoft-msal)
@@ -310,6 +311,20 @@ O resultado será exibido nos logs da aplicação detalhando a quantidade de reg
 
 ---
 
+## Guia de Integração para Desenvolvedores
+
+Se você está desenvolvendo um frontend ou uma aplicação satélite que precisa de autenticação via SAM, consulte o nosso guia detalhado:
+
+👉 **[Plano de Integração SAM](docs/INTEGRATION.md)**
+
+O guia cobre:
+- Como registrar sua aplicação.
+- Fluxos de login (Frontend SPA e Redirecionamento).
+- Validação de tokens JWT.
+- Consumo de permissões por aplicação.
+
+---
+
 ## Fluxos de Autenticação
 
 ### Fluxo 1 — Login com e-mail e senha
@@ -351,9 +366,11 @@ Este é o fluxo principal de SSO. O frontend usa **MSAL.js** para autenticar o u
 
 #### Por que `id_token` e não `access_token`?
 
-> O `access_token` emitido com escopos do Microsoft Graph (ex.: `User.Read`) tem como audience `00000003-0000-0000-c000-000000000000` (o ID fixo do Graph). As chaves públicas usadas para assinar esse token **nunca são publicadas** no JWKS do seu tenant — portanto, nenhum app externo consegue validá-lo.
->
 > O `id_token` sempre tem como audience o `clientId` do seu app registrado, é assinado com as chaves publicadas no JWKS e carrega todas as informações de identidade necessárias (`oid`, `email`, `name`, etc.).
+>
+> #### ⚠️ Requisito: Access Token para Sincronização de Foto
+> Para que o backend consiga sincronizar a foto de perfil do usuário via Microsoft Graph, o frontend **também** deve fornecer um `access_token` com o escopo `User.Read`. 
+> O fluxo de validação no backend agora tenta buscar a imagem do Graph API (`/me/photo/$value`) usando esse token caso ele seja fornecido.
 
 #### Diagrama completo do fluxo
 

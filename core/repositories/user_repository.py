@@ -214,3 +214,27 @@ class UserRepository(IUserRepository):
             await txn.execute(query, {"id": user_id})
         except Exception as e:
             raise Exception(f"Error deleting user: {e}")
+
+    async def count_active_users(self, txn: ITransaction) -> int:
+        """Count all active users"""
+        try:
+            query = "SELECT COUNT(*) as count FROM users WHERE is_active = 1"
+            results = await txn.execute(query)
+            if results:
+                return results[0]["count"]
+            return 0
+        except Exception as e:
+            raise Exception(f"Error counting active users: {e}")
+
+    async def search_users(self, txn: ITransaction, query: str) -> List[UserType]:
+        """Search users by name or CPF/CNPJ"""
+        try:
+            sql = """
+            SELECT id, username, email, ms_oid, full_name, first_name, last_name, manager, unit, job, branche, cpf_cnpj, registration_number, profile_picture_url, is_active, created_at, updated_at 
+            FROM users 
+            WHERE (full_name LIKE :q OR cpf_cnpj LIKE :q OR username LIKE :q) AND is_active = 1
+            """
+            results = await txn.execute(sql, {"q": f"%{query}%"})
+            return [UserType(**data) for data in results]
+        except Exception as e:
+            raise Exception(f"Error searching users: {e}")

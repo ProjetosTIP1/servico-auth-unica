@@ -1,65 +1,116 @@
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Optional, Dict, List
+from pydantic import BaseModel, Field, field_validator
+from enum import Enum
 
 
-class ApplicationModel(BaseModel):
-    client_id: str = Field(default=..., description="The client ID of the application")
-    client_secret: str = Field(
-        default=..., description="The client secret of the application"
+class PermissionEnum(str, Enum):
+    READ = "read"
+    WRITE = "write"
+    DELETE = "delete"
+    DENIED = "denied"
+
+
+class ApplicationType(str, Enum):
+    ALL = "all"
+    INTERNAL = "internal"
+    EXTERNAL = "external"
+    RESTRICTED = "restricted"
+
+
+class ApplicationBase(BaseModel):
+    name: str = Field(..., description="The name of the application")
+    uri: str = Field(..., description="The URI of the application")
+    type: str = Field(
+        ...,
+        description="The type of the application (all, internal, external, restricted)",
     )
-    skip_authorization: bool = Field(
-        default=False,
-        description="Indicates whether the application should skip the authorization step during the OAuth flow",
+    description: Optional[str] = Field(
+        None, description="A brief description of the application"
     )
-    authorization_grant_type: str = Field(
-        default=...,
-        description="The authorization grant type used by the application, e.g., 'authorization_code', 'client_credentials', etc.",
+    permissions: Optional[List[str]] = Field(
+        None,
+        description="List of available permissions for this application. Example: ['read', 'write']",
     )
-    name: str = Field(default=..., description="The name of the system URI")
     is_active: bool = Field(
-        default=True, description="Indicates whether the system URI is active"
-    )
-    url: str = Field(default=..., description="The URL of the system")
-    created_at: datetime = Field(
-        default=..., description="The creation date of the system URI in ISO format"
-    )
-    updated_at: Optional[datetime] = Field(
-        default=None, description="The last update date of the system URI in ISO format"
+        True, description="Indicates whether the application is active"
     )
 
 
-class ApplicationCreateModel(BaseModel):
-    client_id: str = Field(default=..., description="The client ID of the application")
-    client_secret: str = Field(
-        default=..., description="The client secret of the application"
-    )
-    skip_authorization: bool = Field(
-        default=False,
-        description="Indicates whether the application should skip the authorization step during the OAuth flow",
-    )
-    authorization_grant_type: str = Field(
-        default=...,
-        description="The authorization grant type used by the application, e.g., 'authorization_code', 'client_credentials', etc.",
-    )
-    name: str = Field(default=..., description="The name of the system URI")
-    url: str = Field(default=..., description="The URL of the system")
+class ApplicationCreateModel(ApplicationBase):
+    pass
 
 
 class ApplicationUpdateModel(BaseModel):
-    client_secret: Optional[str] = Field(
-        default=None, description="The client secret of the application"
+    name: Optional[str] = None
+    uri: Optional[str] = None
+    type: Optional[str] = None
+    description: Optional[str] = None
+    permissions: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+
+class ApplicationModel(ApplicationBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserApplicationBase(BaseModel):
+    user_id: int
+    application_id: int
+    permissions: Dict[str, str] = Field(
+        ...,
+        description="The permissions of the user in the application. Example: {'read': 'read', 'write': 'write'}",
     )
-    skip_authorization: Optional[bool] = Field(
-        default=None,
-        description="Indicates whether the application should skip the authorization step during the OAuth flow",
+
+    @field_validator("permissions", mode="before")
+    @classmethod
+    def convert_list_to_dict(cls, v):
+        if isinstance(v, list):
+            return {p: p for p in v}
+        return v
+
+
+class UserApplicationCreateModel(UserApplicationBase):
+    pass
+
+
+class UserApplicationUpdateModel(BaseModel):
+    permissions: Dict[str, str]
+
+
+class UserApplicationModel(UserApplicationBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserWithPermissionsModel(BaseModel):
+    user_id: int
+    username: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    cpf_cnpj: Optional[str] = None
+    permissions: Dict[str, str]
+
+
+class BulkLinkModel(BaseModel):
+    permissions: List[str] = Field(default_factory=list)
+    search: Optional[str] = ""
+
+
+class UserApplicationDetailModel(BaseModel):
+    application_id: int
+    name: str
+    uri: str
+    type: str
+    description: Optional[str] = None
+    permissions: Dict[str, str] = Field(
+        ..., description="The permissions of the user in this application."
     )
-    authorization_grant_type: Optional[str] = Field(
-        default=None,
-        description="The authorization grant type used by the application, e.g., 'authorization_code', 'client_credentials', etc.",
+    app_permissions: List[str] = Field(
+        default_factory=list,
+        description="The list of all permissions defined for this application.",
     )
-    is_active: Optional[bool] = Field(
-        default=None, description="Indicates whether the system URI is active"
-    )
-    name: Optional[str] = Field(default=None, description="The name of the system URI")
-    url: Optional[str] = Field(default=None, description="The URL of the system")
+    is_active: bool

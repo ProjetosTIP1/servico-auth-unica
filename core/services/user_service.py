@@ -116,6 +116,30 @@ class UserService(IUserService):
 
                 verified: UserUpdateType = UserUpdateType.model_validate(user_data)
 
+                # Enforcement: If user is from SGA, lock certain fields
+                if user.registration_number:
+                    # We create a new UserUpdateType from the model dump but EXCLUDING the locked fields
+                    # to ensure we don't accidentally update them even if provided in the payload.
+                    locked_fields = {
+                        "full_name",
+                        "first_name",
+                        "last_name",
+                        "cpf_cnpj",
+                        "unit",
+                        "job",
+                        "branche",
+                        "registration_number",
+                    }
+                    update_data = verified.model_dump(exclude_unset=True)
+                    for field in locked_fields:
+                        update_data.pop(field, None)
+
+                    # If after popping there's nothing left to update, just return the user
+                    if not update_data:
+                        return user
+
+                    verified = UserUpdateType(**update_data)
+
                 if verified.cpf_cnpj and verified.cpf_cnpj != user.cpf_cnpj:
                     existing_user: (
                         UserType | None
@@ -220,3 +244,18 @@ class UserService(IUserService):
                 await self.user_repository.delete_user(txn, user_id)
         except Exception as e:
             raise Exception(f"Error in service layer while deleting user: {e}")
+
+    async def count_active_users(self) -> int:
+        try:
+            async with self.db.transaction() as txn:
+                return await self.user_repository.count_active_users(txn)
+        except Exception as e:
+            raise Exception(f"Error in service layer while counting active users: {e}")
+
+    async def search_users(self, query: str) -> List[UserType]:
+        """Search users by name or CPF/CNPJ"""
+        try:
+            async with self.db.transaction() as txn:
+                return await self.user_repository.search_users(txn, query)
+        except Exception as e:
+            raise Exception(f"Error in service layer while searching users: {e}")

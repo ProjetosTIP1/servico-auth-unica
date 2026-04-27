@@ -1,11 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
 from api.handlers.oauth_handler import oauth_router
 from api.handlers.user_handler import user_router
 from api.handlers.ms_handler import ms_router
+from api.handlers.image_handler import image_router
 from api.handlers.integration_handler import router as integration_router
+from api.handlers.application_handler import application_router
+from api.handlers.admin_handler import admin_router
 
 
 from core.infrastructure.database_manager import db_manager, DatabaseManager
@@ -62,8 +66,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/")
+async def root():
+    return {"message": "Single Auth Microservice is running"}
+
+
+app.mount("/images", StaticFiles(directory="images"), name="images")
+
+
 # Register routers
 app.include_router(router=oauth_router, tags=["OAuth"])
 app.include_router(router=user_router, tags=["Users"])
 app.include_router(router=ms_router)
+app.include_router(router=image_router)
 app.include_router(router=integration_router)
+app.include_router(router=application_router)
+app.include_router(router=admin_router)

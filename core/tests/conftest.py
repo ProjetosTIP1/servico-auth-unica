@@ -5,6 +5,8 @@ from core.repositories.user_repository import IUserRepository
 from core.repositories.token_repository import ITokenRepository
 from core.services.user_service import UserService
 from core.services.token_service import TokenService
+from core.ports.repository import IApplicationRepository
+from core.services.application_service import ApplicationService
 
 
 @pytest.fixture
@@ -55,3 +57,15 @@ def token_service(mock_token_repo, mock_user_repo, mock_db):
     return TokenService(
         token_repository=mock_token_repo, user_repository=mock_user_repo, db=mock_db
     )
+
+
+@pytest.fixture
+def mock_app_repo():
+    """Returns a mock application repository."""
+    return AsyncMock(spec=IApplicationRepository)
+
+
+@pytest.fixture
+def application_service(mock_app_repo, mock_db):
+    """Returns an ApplicationService instance with mocked dependencies."""
+    return ApplicationService(application_repository=mock_app_repo, db=mock_db)

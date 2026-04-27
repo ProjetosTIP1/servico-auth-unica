@@ -20,7 +20,8 @@ ms_router = APIRouter(prefix="/o/microsoft", tags=["Authentication"])
 class MicrosoftTokenRequest(BaseModel):
     """Body for the token-validation endpoint."""
 
-    token: str
+    token: str  # id_token
+    access_token: Optional[str] = None  # Optional access token for Graph API (photo)
 
 
 class MicrosoftLoginResponse(BaseModel):
@@ -58,7 +59,9 @@ async def validate_microsoft_token(
     """
 
     try:
-        result: MicrosoftLoginResult = await service.execute(token=body.token)
+        result: MicrosoftLoginResult = await service.execute(
+            token=body.token, access_token=body.access_token
+        )
         # Set cookies
         response.set_cookie(
             key=settings.COOKIE_ACCESS_TOKEN_NAME,

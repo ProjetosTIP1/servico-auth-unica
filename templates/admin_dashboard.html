@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAM - Admin Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #fffcff;
+            --inverted: #28282b;
+            --secondary: #f2f2f2;
+            --tertiary: #96e6b3;
+            --surface: #efefef;
+            --text: #0d2818;
+            --border: #627264;
+            --accent: #627264;
+            --glass: rgba(140, 175, 156, 0.3);
+            --red: #ef3054;
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Chivo', sans-serif;
+        }
+
+        body {
+            background-color: var(--primary);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--inverted);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 900;
+            margin-bottom: 3rem;
+            color: var(--tertiary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-box {
+            width: 32px;
+            height: 32px;
+            background: var(--tertiary);
+            color: var(--inverted);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            color: #a1a1aa;
+            text-decoration: none;
+            margin-bottom: 0.25rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9375rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(150, 230, 179, 0.1);
+            color: var(--tertiary);
+        }
+
+        .nav-item svg {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 2.5rem;
+            background: var(--primary);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--secondary);
+        }
+
+        .header-title h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .user-pill {
+            background: var(--secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text);
+        }
+
+        /* Dashboard Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            border: 1px solid var(--secondary);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--tertiary);
+            box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
+        }
+
+        .card-label {
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .card-content {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .card-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .card-trend {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--tertiary);
+            padding-bottom: 4px;
+        }
+
+        .welcome-section {
+            grid-column: 1 / -1;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 3rem;
+            text-align: center;
+            border: 1px solid var(--secondary);
+            margin-top: 1rem;
+        }
+
+        .welcome-section h2 {
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+
+        .welcome-section p {
+            color: var(--accent);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .btn-logout {
+            margin-top: auto;
+            border: 1px solid rgba(239, 48, 84, 0.3);
+            color: #fca5a5;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 48, 84, 0.1);
+            color: var(--red);
+        }
+
+        /* Mono text utility */
+        .mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    {% with active_page='dashboard' %}
+        {% include 'components/admin_sidebar.html' %}
+    {% endwith %}
+
+    <div class="main">
+        <header>
+            <div class="header-title">
+                <h1>Visão Geral</h1>
+            </div>
+            <div class="user-pill">
+                <div class="avatar">{{ user.username[:1].upper() }}</div>
+                <span>{{ user.username }}</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-label">Total de Usuários Autenticados</div>
+                <div class="card-content">
+                    <div class="card-value">{{ active_users }}</div>
+                    <div class="card-trend">Ao Vivo</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-label">Total de Aplicações Registradas</div>
+                <div class="card-content">
+                    <div class="card-value">{{ apps_count }}</div>
+                    <div class="card-trend">Gerenciar</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-label">Saúde do Sistema</div>
+                <div class="card-content">
+                    <div class="card-value">99%</div>
+                    <div class="card-trend">Saudável</div>
+                </div>
+            </div>
+
+            <div class="welcome-section">
+                <h2>Bem-vindo, {{ user.username }}</h2>
+                <p>Este é o console administrativo para o SAM. Use a navegação para gerenciar usuários, aplicações e permissões em todo o ecossistema.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('logout').onclick = async () => {
+            await fetch('/o/logout', { method: 'POST' });
+            window.location.href = '/admin/login';
+        };
+    </script>
+</body>
+</html>
