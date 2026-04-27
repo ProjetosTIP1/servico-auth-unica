@@ -11,6 +11,7 @@ from core.models.application_models import (
     UserApplicationModel,
     UserApplicationCreateModel,
     UserWithPermissionsModel,
+    UserApplicationDetailModel,
 )
 
 
@@ -139,6 +140,11 @@ class IUserRepository(ABC):
     @abstractmethod
     async def count_active_users(self, txn: ITransaction) -> int:
         """Count all active users"""
+        pass
+
+    @abstractmethod
+    async def search_users(self, txn: ITransaction, query: str) -> List[UserType]:
+        """Search users by name or CPF/CNPJ"""
         pass
 
 
@@ -279,6 +285,13 @@ class IApplicationRepository(ABC):
         self, txn: ITransaction, app_id: int
     ) -> List[UserWithPermissionsModel]:
         """Get all users and their permissions for a specific application"""
+        pass
+
+    @abstractmethod
+    async def list_user_applications_with_permissions(
+        self, txn: ITransaction, user_id: int
+    ) -> List[UserApplicationDetailModel]:
+        """List all applications and permissions linked to a specific user"""
         pass
 
     @abstractmethod

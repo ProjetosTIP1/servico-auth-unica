@@ -1,7 +1,5 @@
 from fastapi import APIRouter, HTTPException
-
-from core.util.deps import AuthenticatedUser, UserServiceDeps
-
+from core.util.deps import AuthenticatedUser, UserServiceDeps, ApplicationServiceDeps
 from core.models.oauth_models import ResponseModel
 from core.models.user_models import (
     UserCreateType,
@@ -9,8 +7,77 @@ from core.models.user_models import (
     UserUpdatePasswordType,
     UserType,
 )
+from core.models.application_models import (
+    UserApplicationDetailModel,
+    UserApplicationUpdateModel,
+)
 
 user_router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@user_router.get("/", response_model=list[UserType])
+async def list_users(
+    authenticated_user: AuthenticatedUser, user_service: UserServiceDeps
+):
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        return await user_service.list_users()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@user_router.get("/search", response_model=list[UserType])
+async def search_users(
+    authenticated_user: AuthenticatedUser, query: str, user_service: UserServiceDeps
+):
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        users = await user_service.search_users(query)
+        return users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@user_router.get(
+    "/{user_id}/applications", response_model=list[UserApplicationDetailModel]
+)
+async def get_user_applications(
+    authenticated_user: AuthenticatedUser,
+    user_id: int,
+    app_service: ApplicationServiceDeps,
+):
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        return await app_service.list_user_applications_with_permissions(user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@user_router.put(
+    "/{user_id}/applications/{app_id}/permissions", response_model=ResponseModel
+)
+async def update_user_permissions(
+    authenticated_user: AuthenticatedUser,
+    user_id: int,
+    app_id: int,
+    permissions_data: UserApplicationUpdateModel,
+    app_service: ApplicationServiceDeps,
+):
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        await app_service.update_user_permissions(user_id, app_id, permissions_data)
+        return ResponseModel(
+            code=200,
+            message="Permissions updated successfully",
+            status="success",
+            data=None,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @user_router.get("/{user_id}", response_model=UserType)

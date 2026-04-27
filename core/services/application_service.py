@@ -10,6 +10,7 @@ from core.models.application_models import (
     UserApplicationCreateModel,
     UserApplicationUpdateModel,
     UserWithPermissionsModel,
+    UserApplicationDetailModel,
     ApplicationType,
 )
 
@@ -268,3 +269,19 @@ class ApplicationService(IApplicationService):
                 )
         except Exception as e:
             raise Exception(f"Error in service layer while bulk unlinking users: {e}")
+
+    async def list_user_applications_with_permissions(
+        self, user_id: int
+    ) -> List[UserApplicationDetailModel]:
+        """List all applications and permissions linked to a specific user"""
+        try:
+            async with self.db.transaction() as txn:
+                return (
+                    await self.application_repository.list_user_applications_with_permissions(
+                        txn, user_id
+                    )
+                )
+        except Exception as e:
+            raise Exception(
+                f"Error in service layer while listing user applications with permissions: {e}"
+            )

@@ -77,3 +77,16 @@ class UserWithPermissionsModel(BaseModel):
     full_name: Optional[str] = None
     cpf_cnpj: Optional[str] = None
     permissions: Dict[str, str]
+
+
+class UserApplicationDetailModel(BaseModel):
+    application_id: int
+    name: str
+    uri: str
+    type: str
+    description: Optional[str] = None
+    permissions: Dict[str, str] = Field(
+        ..., description="The permissions of the user in this application."
+    )
+    is_active: bool
+

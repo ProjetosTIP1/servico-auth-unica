@@ -146,3 +146,28 @@ async def admin_applications(
             "applications": apps_dict
         }
     )
+
+
+@admin_router.get("/users", response_class=HTMLResponse)
+async def get_admin_users(
+    request: Request,
+    authenticated_user: AuthenticatedUser,
+    user_service: UserServiceDeps,
+):
+    """
+    Render the Users management page.
+    """
+    if not authenticated_user.manager:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
+        )
+
+    users = await user_service.list_users()
+    users_dict = [u.model_dump(mode="json") for u in users]
+
+    return templates.TemplateResponse(
+        "admin_users.html",
+        {"request": request, "user": authenticated_user, "users": users_dict},
+    )
+

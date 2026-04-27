@@ -9,6 +9,7 @@ from core.models.application_models import (
     UserApplicationModel,
     UserApplicationCreateModel,
     UserWithPermissionsModel,
+    UserApplicationDetailModel,
 )
 from core.helpers.sql_helper import filter_valid_update_clauses
 
@@ -344,3 +345,38 @@ class ApplicationRepository(IApplicationRepository):
             return 0
         except Exception as e:
             raise Exception(f"Error in bulk unlinking users: {e}")
+
+    async def list_user_applications_with_permissions(
+        self, txn: ITransaction, user_id: int
+    ) -> List[UserApplicationDetailModel]:
+        """List all applications and permissions linked to a specific user"""
+        try:
+            query = """
+            SELECT 
+                a.id as application_id, 
+                a.name, 
+                a.uri, 
+                a.type, 
+                a.description, 
+                ua.permissions,
+                a.is_active
+            FROM applications a
+            JOIN user_applications ua ON a.id = ua.application_id
+            WHERE ua.user_id = :user_id
+            """
+            results = await txn.execute(query, {"user_id": user_id})
+            return [
+                UserApplicationDetailModel(
+                    **{
+                        **row,
+                        "permissions": (
+                            json.loads(row["permissions"])
+                            if isinstance(row["permissions"], str)
+                            else row["permissions"]
+                        ),
+                    }
+                )
+                for row in results
+            ]
+        except Exception as e:
+            raise Exception(f"Error listing user applications with permissions: {e}")
