@@ -196,7 +196,9 @@ class MicrosoftAuthAdapter(IMicrosoftAuthService):
                 response.raise_for_status()
                 return response.content
         except httpx.HTTPError as exc:
-            logger.warning(f"Failed to fetch profile picture from Microsoft Graph: {exc}")
+            logger.warning(
+                f"Failed to fetch profile picture from Microsoft Graph: {exc}"
+            )
             return None
         except Exception as exc:
             logger.error(f"Unexpected error fetching profile picture: {exc}")

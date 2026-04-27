@@ -302,11 +302,21 @@ class ApplicationRepository(IApplicationRepository):
             raise Exception(f"Error fetching users not in application: {e}")
 
     async def bulk_link_all_users(
-        self, txn: ITransaction, app_id: int, search_query: str = ""
+        self,
+        txn: ITransaction,
+        app_id: int,
+        permissions: List[str],
+        search_query: str = "",
     ) -> int:
         """Link all users (optionally filtered by search) to an application."""
         try:
-            params: dict[str, object] = {"app_id": app_id}
+            permissions_dict = {p: p for p in permissions}
+            permissions_json = json.dumps(permissions_dict)
+
+            params: dict[str, object] = {
+                "app_id": app_id,
+                "permissions": permissions_json,
+            }
             search_clause = ""
             if search_query.strip():
                 search_clause = (
@@ -314,14 +324,9 @@ class ApplicationRepository(IApplicationRepository):
                 )
                 params["search"] = f"%{search_query.strip()}%"
 
-            # INSERT INTO user_applications (user_id, application_id, permissions)
-            # SELECT u.id, :app_id, '{}'
-            # FROM users u
-            # WHERE u.is_active = 1
-            # AND NOT EXISTS (SELECT 1 FROM user_applications ua WHERE ua.user_id = u.id AND ua.application_id = :app_id)
             query = f"""
             INSERT INTO user_applications (user_id, application_id, permissions)
-            SELECT u.id, :app_id, '{{}}'
+            SELECT u.id, :app_id, :permissions
             FROM users u
             WHERE u.is_active = 1
               AND NOT EXISTS (
@@ -331,9 +336,11 @@ class ApplicationRepository(IApplicationRepository):
               {search_clause}
             """
             await txn.execute(query, params)
-            # Note: Depending on the driver, we might want to return the number of rows. 
+            # Note: Depending on the driver, we might want to return the number of rows.
             # In our case, txn.execute just runs the query.
-            return 0 # We don't strictly need the count for now, but returning 0 is safe.
+            return (
+                0  # We don't strictly need the count for now, but returning 0 is safe.
+            )
         except Exception as e:
             raise Exception(f"Error in bulk linking users: {e}")
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, Dict, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 
 
@@ -21,12 +21,20 @@ class ApplicationType(str, Enum):
 class ApplicationBase(BaseModel):
     name: str = Field(..., description="The name of the application")
     uri: str = Field(..., description="The URI of the application")
-    type: str = Field(..., description="The type of the application (all, internal, external, restricted)")
-    description: Optional[str] = Field(None, description="A brief description of the application")
-    permissions: Optional[List[str]] = Field(
-        None, description="List of available permissions for this application. Example: ['read', 'write']"
+    type: str = Field(
+        ...,
+        description="The type of the application (all, internal, external, restricted)",
     )
-    is_active: bool = Field(True, description="Indicates whether the application is active")
+    description: Optional[str] = Field(
+        None, description="A brief description of the application"
+    )
+    permissions: Optional[List[str]] = Field(
+        None,
+        description="List of available permissions for this application. Example: ['read', 'write']",
+    )
+    is_active: bool = Field(
+        True, description="Indicates whether the application is active"
+    )
 
 
 class ApplicationCreateModel(ApplicationBase):
@@ -52,8 +60,16 @@ class UserApplicationBase(BaseModel):
     user_id: int
     application_id: int
     permissions: Dict[str, str] = Field(
-        ..., description="The permissions of the user in the application. Example: {'read': 'read', 'write': 'write'}"
+        ...,
+        description="The permissions of the user in the application. Example: {'read': 'read', 'write': 'write'}",
     )
+
+    @field_validator("permissions", mode="before")
+    @classmethod
+    def convert_list_to_dict(cls, v):
+        if isinstance(v, list):
+            return {p: p for p in v}
+        return v
 
 
 class UserApplicationCreateModel(UserApplicationBase):
@@ -79,6 +95,11 @@ class UserWithPermissionsModel(BaseModel):
     permissions: Dict[str, str]
 
 
+class BulkLinkModel(BaseModel):
+    permissions: List[str] = Field(default_factory=list)
+    search: Optional[str] = ""
+
+
 class UserApplicationDetailModel(BaseModel):
     application_id: int
     name: str
@@ -89,4 +110,3 @@ class UserApplicationDetailModel(BaseModel):
         ..., description="The permissions of the user in this application."
     )
     is_active: bool
-

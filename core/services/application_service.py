@@ -252,11 +252,13 @@ class ApplicationService(IApplicationService):
                 f"Error in service layer while fetching available users: {e}"
             )
 
-    async def bulk_link_users(self, app_id: int, search_query: str = "") -> int:
+    async def bulk_link_users(
+        self, app_id: int, permissions: List[str], search_query: str = ""
+    ) -> int:
         try:
             async with self.db.transaction() as txn:
                 return await self.application_repository.bulk_link_all_users(
-                    txn, app_id, search_query
+                    txn, app_id, permissions, search_query
                 )
         except Exception as e:
             raise Exception(f"Error in service layer while bulk linking users: {e}")
@@ -276,10 +278,8 @@ class ApplicationService(IApplicationService):
         """List all applications and permissions linked to a specific user"""
         try:
             async with self.db.transaction() as txn:
-                return (
-                    await self.application_repository.list_user_applications_with_permissions(
-                        txn, user_id
-                    )
+                return await self.application_repository.list_user_applications_with_permissions(
+                    txn, user_id
                 )
         except Exception as e:
             raise Exception(

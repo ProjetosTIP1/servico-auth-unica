@@ -9,6 +9,7 @@ from core.models.application_models import (
     UserApplicationModel,
     UserApplicationCreateModel,
     UserWithPermissionsModel,
+    BulkLinkModel,
 )
 
 application_router = APIRouter(prefix="/applications", tags=["Applications"])
@@ -120,19 +121,20 @@ async def link_user_to_application(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @application_router.post("/{app_id}/users/bulk-link")
 async def bulk_link_users(
     authenticated_user: AuthenticatedUser,
     app_id: int,
+    link_data: BulkLinkModel,
     service: ApplicationServiceDeps,
-    search: str = "",
 ):
     """Link all users (optionally filtered by search) to an application. Only accessible by managers."""
     try:
         if not authenticated_user.manager:
             raise HTTPException(status_code=403, detail="Unauthorized")
-        await service.bulk_link_users(app_id, search)
+        if not link_data.search:
+            link_data.search = ""
+        await service.bulk_link_users(app_id, link_data.permissions, link_data.search)
         return {"message": "Users linked successfully"}
     except HTTPException:
         raise
@@ -250,5 +252,3 @@ async def list_available_users(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-

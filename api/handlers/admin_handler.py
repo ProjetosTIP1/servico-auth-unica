@@ -15,6 +15,7 @@ from core.models.oauth_models import ResponseModel
 from core.config.settings import settings
 
 import json
+
 # Setup templates
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["tojson"] = lambda x: json.dumps(x)
@@ -110,13 +111,13 @@ async def admin_dashboard(
     applications = await app_service.list_applications()
 
     return templates.TemplateResponse(
-        "admin_dashboard.html", 
+        "admin_dashboard.html",
         {
-            "request": request, 
+            "request": request,
             "user": authenticated_user,
             "active_users": active_users,
-            "apps_count": len(applications)
-        }
+            "apps_count": len(applications),
+        },
     )
 
 
@@ -136,15 +137,11 @@ async def admin_applications(
         )
 
     applications = await app_service.list_applications()
-    apps_dict = [app.model_dump(mode='json') for app in applications]
+    apps_dict = [app.model_dump(mode="json") for app in applications]
 
     return templates.TemplateResponse(
-        "admin_applications.html", 
-        {
-            "request": request, 
-            "user": authenticated_user,
-            "applications": apps_dict
-        }
+        "admin_applications.html",
+        {"request": request, "user": authenticated_user, "applications": apps_dict},
     )
 
 
@@ -170,4 +167,3 @@ async def get_admin_users(
         "admin_users.html",
         {"request": request, "user": authenticated_user, "users": users_dict},
     )
-

@@ -329,7 +329,9 @@ class IApplicationService(ABC):
         pass
 
     @abstractmethod
-    async def bulk_link_users(self, app_id: int, search_query: str = "") -> int:
+    async def bulk_link_users(
+        self, app_id: int, permissions: List[str], search_query: str = ""
+    ) -> int:
         """Link all users (optionally filtered) to an application."""
         pass
 

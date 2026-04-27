@@ -43,7 +43,9 @@ from core.ports.service import IMicrosoftAuthService
 from core.services.microsoft_login_service import MicrosoftLoginService
 from core.services.token_service import TokenService as TokenServiceImpl
 from core.services.user_service import UserService as UserServiceImpl
-from core.services.application_service import ApplicationService as ApplicationServiceImpl
+from core.services.application_service import (
+    ApplicationService as ApplicationServiceImpl,
+)
 from core.services.image_usecase import ImageUsecase
 from integration.integration_service import IntegrationService
 
@@ -133,7 +135,9 @@ def get_application_repository() -> IApplicationRepository:
 
 
 def get_application_service(
-    application_repository: IApplicationRepository = Depends(get_application_repository),
+    application_repository: IApplicationRepository = Depends(
+        get_application_repository
+    ),
     mariadb: IDatabase = Depends(get_mariadb_database),
 ) -> ApplicationServiceImpl:
     """Provide a fully wired `ApplicationService` to the route handler."""

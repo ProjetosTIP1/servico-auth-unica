@@ -303,7 +303,11 @@ class IApplicationRepository(ABC):
 
     @abstractmethod
     async def bulk_link_all_users(
-        self, txn: ITransaction, app_id: int, search_query: str = ""
+        self,
+        txn: ITransaction,
+        app_id: int,
+        permissions: List[str],
+        search_query: str = "",
     ) -> int:
         """Link all users (optionally filtered by search) to an application. Returns number of linked users."""
         pass

@@ -19,7 +19,6 @@ MIME_TO_EXT = {
 }
 
 
-
 @runtime_checkable
 class FileLike(Protocol):
     def read(self, size: int = -1, /) -> bytes: ...
