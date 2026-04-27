@@ -48,18 +48,18 @@
                             {% endif %}
                         </td>
                         <td class="actions">
-                            <button class="btn-action" onclick='editApp({{ app | tojson }})' title="Edit">
+                            <button class="btn-action" onclick='editApp({{ app | tojson }})' title="Editar">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
-                            <button class="btn-action" onclick='openUserModal({{ app.id }}, "{{ app.name }}")' title="Manage Users">
+                            <button class="btn-action" onclick='openUserModal({{ app | tojson }})' title="Gerenciar Usuários">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                             </button>
                             {% if app.is_active %}
-                            <button class="btn-action btn-delete" onclick='toggleStatus({{ app.id }}, false)' title="Deactivate">
+                            <button class="btn-action btn-delete" onclick='toggleStatus({{ app.id }}, false)' title="Desativar">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
                             </button>
                             {% else %}
-                            <button class="btn-action" onclick='toggleStatus({{ app.id }}, true)' title="Activate">
+                            <button class="btn-action" onclick='toggleStatus({{ app.id }}, true)' title="Ativar">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                             </button>
                             {% endif %}

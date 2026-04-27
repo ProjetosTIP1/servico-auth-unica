@@ -109,4 +109,8 @@ class UserApplicationDetailModel(BaseModel):
     permissions: Dict[str, str] = Field(
         ..., description="The permissions of the user in this application."
     )
+    app_permissions: List[str] = Field(
+        default_factory=list,
+        description="The list of all permissions defined for this application.",
+    )
     is_active: bool

@@ -144,9 +144,10 @@
                         <div class="app-uri">${app.uri}</div>
                     </div>
                     <div class="app-perms">
-                        ${['read', 'write', 'delete'].map(perm => `
+                        ${(app.app_permissions || []).map(perm => `
                             <label class="perm-checkbox">
                                 <input type="checkbox" 
+                                       data-perm="${perm}"
                                        ${app.permissions[perm] === perm ? 'checked' : ''} 
                                        onchange="updatePermission(event, ${userId}, ${app.application_id}, '${perm}', this.checked)">
                                 ${perm.charAt(0).toUpperCase() + perm.slice(1)}
@@ -168,7 +169,7 @@
         const newPermissions = {};
         
         checkboxes.forEach(cb => {
-            const p = cb.nextSibling.textContent.trim().toLowerCase();
+            const p = cb.getAttribute('data-perm');
             if (cb.checked) {
                 newPermissions[p] = p;
             }

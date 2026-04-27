@@ -366,6 +366,7 @@ class ApplicationRepository(IApplicationRepository):
                 a.type, 
                 a.description, 
                 ua.permissions,
+                a.permissions as app_permissions,
                 a.is_active
             FROM applications a
             JOIN user_applications ua ON a.id = ua.application_id
@@ -380,6 +381,11 @@ class ApplicationRepository(IApplicationRepository):
                             json.loads(row["permissions"])
                             if isinstance(row["permissions"], str)
                             else row["permissions"]
+                        ),
+                        "app_permissions": (
+                            json.loads(row["app_permissions"])
+                            if isinstance(row["app_permissions"], str)
+                            else row["app_permissions"]
                         ),
                     }
                 )

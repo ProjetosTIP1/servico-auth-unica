@@ -87,10 +87,25 @@
     let currentAppId = null;
     let debounceTimer = null;
 
-    async function openUserModal(appId, appName) {
-        currentAppId = appId;
-        document.getElementById('userModalTitle').innerText = `Manage Users — ${appName}`;
+    async function openUserModal(app) {
+        currentAppId = app.id;
+        document.getElementById('userModalTitle').innerText = `Gerenciar Usuários | ${app.name}`;
         document.getElementById('userSearch').value = '';
+        
+        // Populate dynamic permissions
+        const container = document.getElementById('stdPermissionsContainer');
+        const perms = app.permissions || [];
+        
+        if (perms.length === 0) {
+            container.innerHTML = '<span style="font-size: 0.8125rem; color: var(--accent); font-style: italic;">Nenhuma permissão definida para esta aplicação</span>';
+        } else {
+            container.innerHTML = perms.map(p => `
+                <label class="perm-checkbox">
+                    <input type="checkbox" name="std_perm" value="${escapeHtml(p)}"> ${escapeHtml(p)}
+                </label>
+            `).join('');
+        }
+
         userModal.style.display = 'flex';
         await refreshBothLists();
     }
@@ -187,15 +202,23 @@
         }
     }
 
+    function getSelectedPermissions() {
+        const perms = [];
+        const checkboxes = document.querySelectorAll('input[name="std_perm"]:checked');
+        checkboxes.forEach(cb => perms.push(cb.value));
+        return perms;
+    }
+
     async function addUser(userId) {
         try {
+            const permissions = getSelectedPermissions();
             const res = await fetch('/applications/link', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     user_id: userId,
                     application_id: currentAppId,
-                    permissions: {}
+                    permissions: permissions // The backend model has a validator to convert list to dict
                 })
             });
             if (res.ok) {
@@ -229,16 +252,22 @@
 
     async function bulkAddUsers() {
         const search = document.getElementById('userSearch').value;
+        const permissions = getSelectedPermissions();
+        
         const confirmMsg = search 
-            ? `Are you sure you want to add all users matching "${search}"?` 
-            : "Are you sure you want to add ALL active users to this application?";
+            ? `Are you sure you want to add all users matching "${search}" with permissions [${permissions.join(', ')}]?` 
+            : `Are you sure you want to add ALL active users to this application with permissions [${permissions.join(', ')}]?`;
         
         if (!confirm(confirmMsg)) return;
 
         try {
-            const qs = search ? `?search=${encodeURIComponent(search)}` : '';
-            const res = await fetch(`/applications/${currentAppId}/users/bulk-link${qs}`, {
-                method: 'POST'
+            const res = await fetch(`/applications/${currentAppId}/users/bulk-link`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    permissions: permissions,
+                    search: search
+                })
             });
             if (res.ok) {
                 await refreshBothLists(search);
