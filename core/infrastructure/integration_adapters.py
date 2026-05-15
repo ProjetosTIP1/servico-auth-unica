@@ -220,6 +220,11 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
         with self._engine.begin() as conn:
             for row in df.to_dicts():
                 # SAM Schema columns: username, email, full_name, unit, job, branche, is_active, hashed_password
+                first_name: str = row["nome_completo"].split(" ")[0]
+                last_name: str = " ".join(row["nome_completo"].split(" ")[1:])
+                cpf_cnpj: str = (
+                    row["username"].replace(".", "").replace("/", "").replace("-", "")
+                )
                 stmt = text("""
                     INSERT INTO users (username, full_name, registration_number, first_name, last_name, cpf_cnpj, email, unit, job, branche, is_active, hashed_password, created_at, updated_at)
                     VALUES (:username, :full_name, :registration_number, :first_name, :last_name, :cpf_cnpj, :email, :unit, :job, :branche, :is_active, :hashed_password, NOW(), NOW())
@@ -242,9 +247,9 @@ class SamIntegrationAdapter(ISamIntegrationRepository):
                         "username": row["username"],
                         "full_name": row["nome_completo"],
                         "registration_number": row["registration_number"],
-                        "first_name": row["first_name"],
-                        "last_name": row["last_name"],
-                        "cpf_cnpj": row["cpf_cnpj"],
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "cpf_cnpj": cpf_cnpj,
                         "email": row.get("email"),
                         "unit": row.get("unidade"),
                         "job": row.get("cargo"),
