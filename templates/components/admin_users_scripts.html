@@ -118,76 +118,7 @@
             form[field].disabled = isSga;
         });
 
-        // Load applications
-        loadUserApplications(user.id);
-        
         openModal('userEditModal');
-    }
-
-    async function loadUserApplications(userId) {
-        const container = document.getElementById('userAppsList');
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Carregando aplicações...</div>';
-
-        try {
-            const response = await fetch(`/users/${userId}/applications`);
-            const apps = await response.json();
-            
-            if (apps.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhuma aplicação vinculada.</div>';
-                return;
-            }
-
-            container.innerHTML = apps.map(app => `
-                <div class="app-item">
-                    <div class="app-info">
-                        <div class="app-name">${app.name}</div>
-                        <div class="app-uri">${app.uri}</div>
-                    </div>
-                    <div class="app-perms">
-                        ${(app.app_permissions || []).map(perm => `
-                            <label class="perm-checkbox">
-                                <input type="checkbox" 
-                                       data-perm="${perm}"
-                                       ${app.permissions[perm] === perm ? 'checked' : ''} 
-                                       onchange="updatePermission(event, ${userId}, ${app.application_id}, '${perm}', this.checked)">
-                                ${perm.charAt(0).toUpperCase() + perm.slice(1)}
-                            </label>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        } catch (error) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Erro ao carregar aplicações.</div>';
-        }
-    }
-
-    async function updatePermission(event, userId, appId, perm, checked) {
-        // First get current permissions from the UI state or fetch again
-        // For simplicity, we'll assume the checkboxes reflect current state
-        const appItem = event.target.closest('.app-item');
-        const checkboxes = appItem.querySelectorAll('input[type="checkbox"]');
-        const newPermissions = {};
-        
-        checkboxes.forEach(cb => {
-            const p = cb.getAttribute('data-perm');
-            if (cb.checked) {
-                newPermissions[p] = p;
-            }
-        });
-
-        try {
-            const response = await fetch(`/users/${userId}/applications/${appId}/permissions`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ permissions: newPermissions })
-            });
-            
-            if (!response.ok) throw new Error('Failed to update permissions');
-            // Success - maybe show a small toast or just leave as is
-        } catch (error) {
-            alert('Erro ao atualizar permissões.');
-            event.target.checked = !checked; // revert
-        }
     }
 
     async function saveUserProfile() {

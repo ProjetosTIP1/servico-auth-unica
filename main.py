@@ -8,7 +8,6 @@ from api.handlers.user_handler import user_router
 from api.handlers.ms_handler import ms_router
 from api.handlers.image_handler import image_router
 from api.handlers.integration_handler import router as integration_router
-from api.handlers.application_handler import application_router
 from api.handlers.admin_handler import admin_router
 
 
@@ -81,5 +80,4 @@ app.include_router(router=user_router, tags=["Users"])
 app.include_router(router=ms_router)
 app.include_router(router=image_router)
 app.include_router(router=integration_router)
-app.include_router(router=application_router)
 app.include_router(router=admin_router)

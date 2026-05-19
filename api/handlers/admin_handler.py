@@ -8,7 +8,6 @@ from core.util.deps import (
     AuthenticatedUser,
     TokenServiceDeps,
     UserServiceDeps,
-    ApplicationServiceDeps,
     get_current_user_optional,
 )
 from core.models.oauth_models import ResponseModel
@@ -96,7 +95,6 @@ async def admin_dashboard(
     request: Request,
     authenticated_user: AuthenticatedUser,
     user_service: UserServiceDeps,
-    app_service: ApplicationServiceDeps,
 ):
     """
     Render the SAM Admin Dashboard.
@@ -108,7 +106,6 @@ async def admin_dashboard(
         )
 
     active_users = await user_service.count_active_users()
-    applications = await app_service.list_applications()
 
     return templates.TemplateResponse(
         "admin_dashboard.html",
@@ -116,32 +113,7 @@ async def admin_dashboard(
             "request": request,
             "user": authenticated_user,
             "active_users": active_users,
-            "apps_count": len(applications),
         },
-    )
-
-
-@admin_router.get("/applications", response_class=HTMLResponse)
-async def admin_applications(
-    request: Request,
-    authenticated_user: AuthenticatedUser,
-    app_service: ApplicationServiceDeps,
-):
-    """
-    Render the Applications management page.
-    """
-    if not authenticated_user.manager:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied",
-        )
-
-    applications = await app_service.list_applications()
-    apps_dict = [app.model_dump(mode="json") for app in applications]
-
-    return templates.TemplateResponse(
-        "admin_applications.html",
-        {"request": request, "user": authenticated_user, "applications": apps_dict},
     )
 
 

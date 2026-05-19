@@ -13,7 +13,6 @@ from core.ports.repository import (
     ITokenRepository,
     ISgaRepository,
     ISamIntegrationRepository,
-    IApplicationRepository,
 )
 from core.helpers.authentication_helper import validate_token
 from typing import Annotated
@@ -36,16 +35,12 @@ from core.infrastructure.integration_adapters import (
 
 from core.repositories.user_repository import UserRepository
 from core.repositories.token_repository import TokenRepository
-from core.repositories.application_repository import ApplicationRepository
 from core.models.user_models import MicrosoftUserIdentity, UserType
 from core.ports.service import IMicrosoftAuthService
 
 from core.services.microsoft_login_service import MicrosoftLoginService
 from core.services.token_service import TokenService as TokenServiceImpl
 from core.services.user_service import UserService as UserServiceImpl
-from core.services.application_service import (
-    ApplicationService as ApplicationServiceImpl,
-)
 from core.services.image_usecase import ImageUsecase
 from integration.integration_service import IntegrationService
 
@@ -127,23 +122,6 @@ def get_user_service(
 ) -> UserServiceImpl:
     """Provide a fully wired `UserService` to the route handler."""
     return UserServiceImpl(user_repository=user_repository, db=mariadb)
-
-
-def get_application_repository() -> IApplicationRepository:
-    """Provide a new instance of the ApplicationRepository."""
-    return ApplicationRepository()
-
-
-def get_application_service(
-    application_repository: IApplicationRepository = Depends(
-        get_application_repository
-    ),
-    mariadb: IDatabase = Depends(get_mariadb_database),
-) -> ApplicationServiceImpl:
-    """Provide a fully wired `ApplicationService` to the route handler."""
-    return ApplicationServiceImpl(
-        application_repository=application_repository, db=mariadb
-    )
 
 
 def get_image_usecase() -> ImageUsecase:
@@ -326,9 +304,7 @@ async def require_microsoft_user(
 AuthenticatedUser = Annotated[UserType, Depends(get_current_user)]
 TokenServiceDeps = Annotated[ITokenService, Depends(get_token_service)]
 UserServiceDeps = Annotated[UserServiceImpl, Depends(get_user_service)]
-ApplicationServiceDeps = Annotated[
-    ApplicationServiceImpl, Depends(get_application_service)
-]
+
 ImageUsecaseDeps = Annotated[ImageUsecase, Depends(get_image_usecase)]
 DatabaseDeps = Annotated[IDatabase, Depends(get_mariadb_database)]
 DatabaseManagerDeps = Annotated[DatabaseManager, Depends(get_database_manager)]
