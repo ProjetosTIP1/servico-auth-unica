@@ -87,6 +87,16 @@ class Settings(BaseSettings):
     WHATSAPP_API_URL: str = os.getenv("WHATSAPP_API_URL", "your_whatsapp_api_url")
     WHATSAPP_API_TOKEN: str = os.getenv("WHATSAPP_API_TOKEN", "your_whatsapp_api_token")
 
+    # ── Redis / ARQ ────────────────────────────────────────────────────────────
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
+    REDIS_PASSWORD: str | None = os.getenv("REDIS_PASSWORD", None)
+
+    # Cron schedule for synchronization (default: every day at 02:00)
+    # Format: minute, hour, day, month, weekday
+    INTEGRATION_CRON: str = os.getenv("INTEGRATION_CRON", "0 2 * * *")
+
     # ── Azure AD / Microsoft Entra ID ──────────────────────────────────────────
     # AZURE_TENANT_ID: your Directory (tenant) ID from the Azure portal.
     #   Use "common" to allow any Microsoft account, or your specific tenant GUID
