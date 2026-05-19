@@ -25,15 +25,11 @@ class Settings(BaseSettings):
     DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
     API_URL: str = os.getenv("API_URL", "http://localhost:8000")
     AUTH_TOKEN: str = os.getenv("AUTH_TOKEN", "your_auth_token_here")
-    TASK_POLL_INTERVAL: int = int(os.getenv("TASK_POLL_INTERVAL", "10"))
-    MAX_CONCURRENT_REQUESTS: int = int(os.getenv("MAX_CONCURRENT_REQUESTS", "5"))
+    TASK_POLL_INTERVAL: int = 10
+    MAX_CONCURRENT_REQUESTS: int = 5
     IMAGES_UPLOAD_DIR: str = os.getenv("IMAGES_UPLOAD_DIR", "images")
-    MAX_CONCURRENT_REQUESTS: int = int(os.getenv("MAX_CONCURRENT_REQUESTS", "5"))
-    TASK_POLL_INTERVAL: int = int(os.getenv("TASK_POLL_INTERVAL", "10"))
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
-        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
-    )
-    REFRESH_TOKEN_EXPIRES_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRES_DAYS", "7"))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRES_DAYS: int = 7
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
 
@@ -69,7 +65,7 @@ class Settings(BaseSettings):
     ]
 
     MARIADB_HOST: str = os.getenv("MARIADB_HOST", "your_mariadb_host")
-    MARIADB_PORT: int = int(os.getenv("MARIADB_PORT", "3306"))
+    MARIADB_PORT: int = 3306
     MARIADB_USER: str = os.getenv("MARIADB_USER", "your_mariadb_user")
     MARIADB_PASSWORD: str = os.getenv("MARIADB_PASSWORD", "your_mariadb_password")
     MARIADB_DB: str = os.getenv("MARIADB_DB", "your_mariadb_db")
@@ -77,7 +73,7 @@ class Settings(BaseSettings):
     SQLSERVER_PASSWORD: str = os.getenv("SQLSERVER_PASSWORD", "your_sqlserver_password")
     SQLSERVER_DB: str = os.getenv("SQLSERVER_DB", "your_sqlserver_db")
     SQLSERVER_HOST: str = os.getenv("SQLSERVER_HOST", "your_sqlserver_host")
-    SQLSERVER_PORT: int = int(os.getenv("SQLSERVER_PORT", "1433"))
+    SQLSERVER_PORT: int = 1433
     SQLSERVER_DRIVER: str = os.getenv("SQLSERVER_DRIVER", "your_sqlserver_driver")
     SQLSERVER_TRUST_SERVER_CERTIFICATE: str = os.getenv(
         "SQLSERVER_TRUST_SERVER_CERTIFICATE", "yes"
@@ -89,8 +85,8 @@ class Settings(BaseSettings):
 
     # ── Redis / ARQ ────────────────────────────────────────────────────────────
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
-    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
-    REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
     REDIS_PASSWORD: str | None = os.getenv("REDIS_PASSWORD", None)
 
     # Cron schedule for synchronization (default: every day at 02:00)

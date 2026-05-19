@@ -1,6 +1,6 @@
 # Use the official Python image as a base
 FROM ghcr.io/astral-sh/uv:latest AS uv
-FROM python:3.12-slim-bullseye
+FROM python:3.12-slim-bookworm
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -10,9 +10,25 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    gnupg \
     build-essential \
+    libmariadb-dev \
     libpq-dev \
+    unixodbc \
+    unixodbc-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Install required dependencies for Microsoft ODBC Driver
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg \
+    && echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql17 mssql-tools18 \
+    && ldconfig \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables for ODBC
+ENV PATH="/opt/mssql-tools18/bin:${PATH}"
 
 # Copy uv from the official image
 COPY --from=uv /uv /usr/local/bin/uv
@@ -33,7 +49,7 @@ COPY . .
 
 RUN uv sync --frozen
 
-# Create the images and backups directories and set permissions
+# Create the images directory and set permissions
 RUN mkdir -p /app/images
 
 # Create a non-root user for security

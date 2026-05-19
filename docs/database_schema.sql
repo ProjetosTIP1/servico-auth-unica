@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 SELECT 'Table [users] created successfully.' as Message;
 
+
 CREATE TABLE IF NOT EXISTS `departments` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `erp_id` VARCHAR(255) NOT NULL UNIQUE,
@@ -60,6 +61,7 @@ CREATE TABLE IF NOT EXISTS `departments` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 SELECT 'Table [departments] created successfully.' as Message;
+
 
 CREATE TABLE IF NOT EXISTS `positions` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -72,26 +74,6 @@ CREATE TABLE IF NOT EXISTS `positions` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 SELECT 'Table [positions] created successfully.' as Message;
-
-
--- Applications table for storing system-related URLs
--- Maps to: Applications model in models.py
-CREATE TABLE IF NOT EXISTS `applications` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `name` VARCHAR(255) NOT NULL,
-    `uri` VARCHAR(1000) NOT NULL,
-    `type` VARCHAR(100) NOT NULL, -- e.g., 'all', 'internal', 'external'
-    `description` VARCHAR(500) DEFAULT NULL,
-    `permissions` JSON DEFAULT NULL, -- List of available permissions for this app | ["read", "write", "approve"]
-    `is_active` BOOLEAN DEFAULT TRUE,
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    -- Index for URI lookup
-    INDEX `idx_applications_name` (`name`)
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-SELECT 'Table [applications] created successfully.' as Message;
 
 
 -- ==========================================================================
@@ -123,28 +105,6 @@ CREATE TABLE IF NOT EXISTS `tokens` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 SELECT 'Table [tokens] created successfully.' as Message;
-
-
-CREATE TABLE IF NOT EXISTS `user_applications` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT NOT NULL,
-    `application_id` INT NOT NULL,
-    `permissions` JSON NOT NULL, -- Object with permissions of user in application | {"read": "read", "write": "write", "delete": "delete", "denied": "denied"}
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    -- Foreign key constraints
-    CONSTRAINT `fk_user_applications_user` FOREIGN KEY (`user_id`)
-        REFERENCES `users`(`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_user_applications_application` FOREIGN KEY (`application_id`)
-        REFERENCES `applications`(`id`) ON DELETE CASCADE,
-        
-    -- Indexes for performance
-    INDEX `idx_user_applications_user_id` (`user_id`),
-    INDEX `idx_user_applications_application_id` (`application_id`)
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-SELECT 'Table [user_applications] created successfully.' as Message;
 
 
 -- ==========================================================================
@@ -184,17 +144,17 @@ SELECT 'Table [database_logs] created successfully.' as Message;
 -- Note: This is commented out for security reasons in production
 -- Uncomment and modify as needed for your initial setup
 
--- INSERT IGNORE INTO `users` (`username`, `email`, `full_name`, `first_name`, `last_name`, `manager`, `unit`, `job`, `branche`, `cpf_cnpj`, `registration_number`, `profile_picture_url`, `hashed_password`, `is_active`)
--- VALUES ('administrador', 'admin@pedreiraumvalemix.com.br', 'Administrator do Sistema', 'Administrator', 'do Sistema', NULL, NULL, NULL, NULL, '99999999999', '99999999999', NULL, '$2b$12$XmebKoVqAqEHbnh.8qdnQehrdxKR2Y9MqYblvyWGyqNQN6c16wkRK', TRUE);
+INSERT IGNORE INTO `users` (`username`, `email`, `full_name`, `first_name`, `last_name`, `manager`, `unit`, `job`, `branche`, `cpf_cnpj`, `registration_number`, `profile_picture_url`, `hashed_password`, `is_active`)
+VALUES ('administrador', 'admin@pedreiraumvalemix.com.br', 'Administrator do Sistema', 'Administrator', 'do Sistema', NULL, NULL, NULL, NULL, '99999999999', '99999999999', NULL, '$2b$12$XmebKoVqAqEHbnh.8qdnQehrdxKR2Y9MqYblvyWGyqNQN6c16wkRK', TRUE);
 
--- SELECT 'Default admin user created. Please update the password hash!' as Message;
+SELECT 'Default admin user created. Please update the password hash!' as Message;
 
 -- ==========================================================================
 -- PERFORMANCE OPTIMIZATION
 -- ==========================================================================
 
 -- Analyze tables for optimal query performance in MariaDB
-ANALYZE TABLE `users`, `tokens`, `applications`;
+ANALYZE TABLE `users`, `tokens`, `database_logs`;
 
 SELECT 'Database statistics updated for optimal performance.' as Message;
 

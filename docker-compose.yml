@@ -5,6 +5,8 @@ services:
     ports:
       - "6379:6379"
     restart: always
+    networks:
+      - sam-network
 
   api:
     build: .
@@ -18,6 +20,8 @@ services:
     depends_on:
       - redis
     restart: always
+    networks:
+      - sam-network
 
   worker:
     build: .
@@ -30,3 +34,11 @@ services:
     depends_on:
       - redis
     restart: always
+    networks:
+      - sam-network
+
+networks:
+  sam-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: sam-network
