@@ -34,6 +34,7 @@ from core.ports.infrastructure import IDatabase, ITransaction
 
 from core.helpers.logger_helper import logger
 from core.helpers.authentication_helper import get_password_hash
+from core.services.image_usecase import ImageUsecase
 
 
 @dataclass
@@ -62,16 +63,21 @@ class MicrosoftLoginService:
         ms_auth: IMicrosoftAuthService,
         user_repo: IUserRepository,
         token_service: ITokenService,
+        image_usecase: ImageUsecase,
         db: IDatabase,
     ) -> None:
         self._ms_auth = ms_auth
         self._user_repo = user_repo
         self._token_service = token_service
+        self._image_usecase = image_usecase
         self.db = db
 
-    async def execute(self, token: str) -> MicrosoftLoginResult:
+    async def execute(
+        self, token: str, access_token: str | None = None
+    ) -> MicrosoftLoginResult:
         """
         Validate the bearer token, sync the user, and issue session tokens.
+        If access_token is provided, also syncs the profile picture.
         """
         identity: MicrosoftUserIdentity | None = None
         user: UserType | None = None
@@ -98,6 +104,26 @@ class MicrosoftLoginService:
             # We wrap user sync in its own transaction
             async with self.db.transaction() as txn:
                 user, is_new_user = await self._check_user_sync(txn, identity)
+
+                # Step 2.1 — Sync profile picture from Microsoft Graph if access_token is provided
+                if access_token:
+                    try:
+                        photo_bytes = await self._ms_auth.get_user_profile_picture(
+                            access_token
+                        )
+                        if photo_bytes:
+                            await self._image_usecase.upsert_from_bytes(
+                                txn, photo_bytes, user.id
+                            )
+                            logger.info(
+                                f"Profile picture synced from Microsoft for user {user.id}"
+                            )
+                    except Exception as e:
+                        # We don't want to fail the whole login if just the photo sync fails
+                        logger.warning(
+                            f"Failed to sync profile picture for user {user.id}: {e}"
+                        )
+
         except Exception as e:
             logger.error(f"User synchronization failed: {e}")
             raise RuntimeError(

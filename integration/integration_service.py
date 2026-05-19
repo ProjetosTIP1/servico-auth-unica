@@ -151,9 +151,12 @@ class IntegrationService(IIntegrationService):
 
         disabled_count = 0
         if not to_disable_df.is_empty():
-            disabled_count = self.sam_repo.disable_users(
-                to_disable_df["username"].to_list()
-            )
+            try:
+                disabled_count = self.sam_repo.disable_users(
+                    to_disable_df["username"].to_list()
+                )
+            except Exception as e:
+                logger.error(f"Error disabling users: {str(e)}")
 
         logger.info(
             f"User sync finished. Upserted: {upsert_count}, Disabled: {disabled_count}"

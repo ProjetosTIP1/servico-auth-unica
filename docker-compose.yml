@@ -1,0 +1,44 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: sam-redis
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+      - sam-network
+
+  api:
+    build: .
+    container_name: sam-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - core/config/.env
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+    restart: always
+    networks:
+      - sam-network
+
+  worker:
+    build: .
+    container_name: sam-worker
+    command: uv run arq worker.WorkerSettings
+    env_file:
+      - core/config/.env
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+    restart: always
+    networks:
+      - sam-network
+
+networks:
+  sam-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: sam-network

@@ -113,6 +113,16 @@ class IUserService(ABC):
         """Soft delete a user by ID"""
         pass
 
+    @abstractmethod
+    async def count_active_users(self) -> int:
+        """Count all active users"""
+        pass
+
+    @abstractmethod
+    async def search_users(self, query: str) -> List[UserType]:
+        """Search users by name or CPF/CNPJ"""
+        pass
+
 
 class IIntegrationService(ABC):
     """Orchestrates the synchronization between SGA and SAM"""
@@ -197,5 +207,18 @@ class IMicrosoftAuthService(ABC):
 
         Raises:
             MicrosoftAuthError: if the code exchange or token validation fails.
+        """
+        ...
+
+    @abstractmethod
+    async def get_user_profile_picture(self, access_token: str) -> bytes | None:
+        """
+        Fetch the user's profile picture from Microsoft Graph.
+
+        Args:
+            access_token: A valid Microsoft Graph Access Token with 'User.Read' scope.
+
+        Returns:
+            The raw bytes of the image, or None if no picture is set or the call fails.
         """
         ...

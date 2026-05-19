@@ -15,6 +15,7 @@ Microsserviço centralizado de autenticação construído com **FastAPI**, respo
 - [Executando o Projeto](#executando-o-projeto)
 - [Endpoints da API](#endpoints-da-api)
 - [Integração SGA ↔ SAM](#integração-sga--sam)
+- [Guia de Integração para Desenvolvedores](#guia-de-integração-para-desenvolvedores)
 - [Fluxos de Autenticação](#fluxos-de-autenticação)
   - [Fluxo 1 — Login com e-mail e senha](#fluxo-1--login-com-e-mail-e-senha)
   - [Fluxo 2 — Login via Microsoft (MSAL)](#fluxo-2--login-via-microsoft-msal)
@@ -38,36 +39,43 @@ O serviço expõe uma API REST que centraliza:
 | Componente | Tecnologia |
 |---|---|
 | Framework web | FastAPI 0.129+ / Uvicorn |
+| Task Queue / Cron | **ARQ** (Async Redis Queue) |
+| Message Broker | **Redis** / Valkey |
 | Linguagem | Python 3.12+ |
 | Validação / schemas | Pydantic v2 + Pydantic Settings |
 | Banco principal | MariaDB (via driver nativo `mariadb`) |
 | Banco secundário | SQL Server (via `pyodbc`) |
+| Processamento de Dados| **Polars** |
 | Autenticação Microsoft | MSAL (`msal`) + `python-jose[cryptography]` |
 | Hash de senhas | `bcrypt` |
 | Linting / formatação | `ruff` |
 | Gerenciador de deps | `uv` |
+| Containerização | Docker / Docker Compose |
 
 ---
 
 ## Arquitetura
 
-O projeto segue **Clean Architecture** com a regra de dependência apontando sempre de fora para dentro:
+O projeto segue **Clean Architecture** e agora inclui um worker de processamento em segundo plano:
 
 ```
 ┌─────────────────────────────────────────────┐
 │  API Layer  (api/)                          │
 │  Handlers, Middlewares                      │
 ├─────────────────────────────────────────────┤
+│  Worker Layer  (worker.py, integration/tasks)│
+│  Background Jobs, Cron Tasks                │
+├─────────────────────────────────────────────┤
 │  Application Layer  (core/services/)        │
 │  Casos de uso: MicrosoftLoginService,       │
-│  TokenService, UserService                  │
+│  TokenService, UserService, IntegrationService
 ├─────────────────────────────────────────────┤
 │  Domain Layer  (core/models/, core/ports/)  │
 │  Entidades, Interfaces (Ports)              │
 ├─────────────────────────────────────────────┤
 │  Infrastructure Layer  (core/infrastructure)│
 │  MicrosoftAuthAdapter, MariaDBAdapter,      │
-│  DatabaseManager                            │
+│  DatabaseManager, SGA/SAM Adapters          │
 └─────────────────────────────────────────────┘
 ```
 
@@ -76,6 +84,7 @@ O projeto segue **Clean Architecture** com a regra de dependência apontando sem
 - **DIP (Dependency Inversion):** Serviços dependem de interfaces (`core/ports/`), nunca de implementações concretas.
 - **SRP:** Cada classe tem uma única responsabilidade (ex.: `MicrosoftAuthAdapter` é a única classe que conhece JWKS e MSAL).
 - **Composition Root:** `core/util/deps.py` é o único lugar que conecta interfaces às implementações, via injeção de dependência do FastAPI.
+- **Background Processing:** Tarefas pesadas ou agendadas são delegadas ao **ARQ Worker** para não bloquear a API principal.
 
 ---
 
@@ -83,44 +92,27 @@ O projeto segue **Clean Architecture** com a regra de dependência apontando sem
 
 ```
 single-auth-microservice/
-├── main.py                        # Ponto de entrada FastAPI (lifespan, routers, middlewares)
+├── main.py                        # Ponto de entrada FastAPI
+├── worker.py                      # Configuração e ponto de entrada do ARQ Worker
+├── docker-compose.yml             # Orquestração (API + Worker + Redis)
 ├── pyproject.toml                 # Dependências e configuração do projeto
 ├── api/
-│   ├── handlers/
-│   │   ├── ms_handler.py          # Endpoints de autenticação Microsoft
-│   │   ├── oauth_handler.py       # Endpoints OAuth2 (login, refresh, logout, /me)
-│   │   └── user_handler.py        # CRUD de usuários
-│   └── middlewares/
-│       ├── auth_mw.py             # Middleware de autenticação JWT
-│       └── correlation_id_mw.py   # Middleware de Correlation ID
+│   ├── handlers/ ...              # Endpoints (OAuth, Users, Integration, Admin)
+│   └── middlewares/ ...           # Middlewares (Correlation ID, Auth)
 ├── core/
 │   ├── config/
-│   │   └── settings.py            # Todas as variáveis de ambiente (Pydantic Settings)
-│   ├── infrastructure/
-│   │   ├── database_manager.py    # Singleton que gerencia o ciclo de vida das conexões
-│   │   ├── mariadb_adapter.py     # Implementação concreta de IDatabase para MariaDB
-│   │   ├── microsoft_auth_adapter.py  # Validação de JWT do Azure AD (JWKS + python-jose)
-│   │   └── sqls_adapter.py        # Implementação concreta de IDatabase para SQL Server
-│   ├── models/
-│   │   ├── user_models.py         # UserType, UserCreateType, MicrosoftUserIdentity, ...
-│   │   ├── oauth_models.py        # TokenResponseModel, TokenModel, ...
-│   │   └── application_models.py  # ApplicationModel
-│   ├── ports/
-│   │   ├── service.py             # IMicrosoftAuthService, ITokenService
-│   │   ├── repository.py          # IUserRepository, ITokenRepository
-│   │   └── infrastructure.py      # IDatabase
-│   ├── repositories/
-│   │   ├── user_repository.py     # Queries SQL para usuários
-│   │   └── token_repository.py    # Queries SQL para tokens
-│   ├── services/
-│   │   ├── microsoft_login_service.py  # Caso de uso: validar token MS + provisionar usuário
-│   │   ├── token_service.py            # Login local, refresh, revogação
-│   │   └── user_service.py             # CRUD de usuários
+│   │   └── settings.py            # Variáveis de ambiente e configurações globais
+│   ├── infrastructure/ ...        # Adaptores (DB, Microsoft, SGA/SAM)
+│   ├── models/ ...                # Modelos Pydantic e Entidades
+│   ├── ports/ ...                 # Interfaces (Ports)
+│   ├── services/ ...              # Casos de uso (User, Token, Integration)
 │   └── util/
-│       ├── deps.py                # Composition Root — injeção de dependências
-│       └── context.py             # ContextVar para Correlation ID
-└── docs/
-    └── database_schema.sql        # Schema completo do MariaDB
+│       ├── deps.py                # Composition Root (Dependency Injection)
+│       └── context.py             # Correlation ID Context
+├── integration/
+│   ├── integration_service.py     # Lógica central de sincronização
+│   └── tasks.py                   # Definição de tarefas para o Worker
+└── docs/ ...                      # Documentação e Schemas SQL
 ```
 
 ---
@@ -143,6 +135,15 @@ REFRESH_TOKEN_EXPIRES_DAYS=7
 
 # ── CORS ───────────────────────────────────────────────────────────────────
 ALLOWED_ORIGINS=["http://localhost:3000","http://localhost:5173"]
+
+# ── Redis / ARQ (Background Tasks) ──────────────────────────────────────────
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=
+# Agendamento da sincronização (minute hour day month weekday)
+# Padrão: 02:00 AM todos os dias
+INTEGRATION_CRON=0 2 * * *
 
 # ── MariaDB ────────────────────────────────────────────────────────────────
 MARIADB_HOST=localhost
@@ -192,34 +193,49 @@ Tabelas criadas:
 | `database_logs` | Log de auditoria de operações. |
 
 ---
-
 ## Executando o Projeto
 
 ### Pré-requisitos
 
 - Python 3.12+
 - [`uv`](https://github.com/astral-sh/uv)
+- Docker & Docker Compose (Recomendado)
 - MariaDB em execução
 - (Opcional) SQL Server
 
-### Instalação
+### Via Docker Compose (Recomendado)
+
+Esta é a forma mais fácil de subir o ambiente completo (API + Worker + Redis):
 
 ```bash
-# Instalar dependências
-uv sync
-
-# Ativar o ambiente virtual
-.venv\Scripts\activate          # Windows
-source .venv/bin/activate       # Linux/macOS
+docker-compose up --build
 ```
 
-### Iniciar o servidor
+### Via Local (Desenvolvimento)
 
-```bash
-uvicorn main:app --reload
-```
+1. **Instalar dependências:**
+   ```bash
+   uv sync
+   ```
+
+2. **Ativar o ambiente virtual:**
+   ```bash
+   .venv\Scripts\activate          # Windows
+   source .venv/bin/activate       # Linux/macOS
+   ```
+
+3. **Iniciar o servidor API:**
+   ```bash
+   uvicorn main:app --reload
+   ```
+
+4. **Iniciar o Worker de tarefas (em outro terminal):**
+   ```bash
+   uv run arq worker.WorkerSettings
+   ```
 
 A documentação interativa estará disponível em:
+...
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
@@ -274,22 +290,23 @@ ruff format .
 > \* **Nota:** Atualmente os endpoints de integração são públicos para facilitar chamadas de tarefas agendadas internas. Recomenda-se restringir o acesso via firewall ou rede interna.
 
 ---
-
 ## Integração SGA ↔ SAM
 
 O sistema possui um motor de integração de alta performance baseado em **Polars** que sincroniza os dados do sistema legado (SGA - SQL Server) com o SAM (MariaDB).
 
 ### Funcionamento do Processo
-O processo de sincronização segue o padrão ETL:
-1.  **Extração:** Busca usuários em massa do SQL Server.
-2.  **Transformação:** Normaliza usernames, detecta novos usuários, mudanças em cargos/unidades e identifica usuários que devem ser desativados.
-3.  **Carga (Load):** Realiza upserts em lote no MariaDB para máxima eficiência.
+O processo de sincronização segue o padrão ETL e pode ser disparado manualmente via API ou automaticamente via Worker.
 
-### Execução via Host Task (Agendamento)
+### Agendamento Automático (Native Worker)
+O sistema utiliza um worker **ARQ** para executar a sincronização automaticamente. O agendamento é definido pela variável `INTEGRATION_CRON` no arquivo `.env`. Por padrão, a tarefa é executada todos os dias às **02:00 AM**.
 
-Para manter os dados sincronizados automaticamente, você pode configurar uma tarefa no host (servidor) que chama o endpoint de sincronização em intervalos regulares.
+Para que o agendamento funcione, o serviço `worker` deve estar em execução (seja via Docker ou comando `arq`).
+
+### Execução via Host Task (Alternativa Legacy)
+Se você preferir não usar o worker nativo, pode continuar chamando o endpoint via `curl` no crontab do sistema operacional:
 
 #### Linux (Cronjob)
+...
 Adicione uma entrada ao `crontab` para executar a sincronização toda madrugada às 02:00:
 ```bash
 0 2 * * * curl -X POST "http://localhost:8000/integration/sync-all?dry_run=false"
@@ -307,6 +324,20 @@ Antes de aplicar mudanças reais, você pode testar o que será alterado usando 
 curl -X POST "http://localhost:8000/integration/sync-all?dry_run=true"
 ```
 O resultado será exibido nos logs da aplicação detalhando a quantidade de registros que seriam afetados.
+
+---
+
+## Guia de Integração para Desenvolvedores
+
+Se você está desenvolvendo um frontend ou uma aplicação satélite que precisa de autenticação via SAM, consulte o nosso guia detalhado:
+
+👉 **[Plano de Integração SAM](docs/INTEGRATION.md)**
+
+O guia cobre:
+- Como registrar sua aplicação.
+- Fluxos de login (Frontend SPA e Redirecionamento).
+- Validação de tokens JWT.
+- Consumo de permissões por aplicação.
 
 ---
 
@@ -351,9 +382,11 @@ Este é o fluxo principal de SSO. O frontend usa **MSAL.js** para autenticar o u
 
 #### Por que `id_token` e não `access_token`?
 
-> O `access_token` emitido com escopos do Microsoft Graph (ex.: `User.Read`) tem como audience `00000003-0000-0000-c000-000000000000` (o ID fixo do Graph). As chaves públicas usadas para assinar esse token **nunca são publicadas** no JWKS do seu tenant — portanto, nenhum app externo consegue validá-lo.
->
 > O `id_token` sempre tem como audience o `clientId` do seu app registrado, é assinado com as chaves publicadas no JWKS e carrega todas as informações de identidade necessárias (`oid`, `email`, `name`, etc.).
+>
+> #### ⚠️ Requisito: Access Token para Sincronização de Foto
+> Para que o backend consiga sincronizar a foto de perfil do usuário via Microsoft Graph, o frontend **também** deve fornecer um `access_token` com o escopo `User.Read`. 
+> O fluxo de validação no backend agora tenta buscar a imagem do Graph API (`/me/photo/$value`) usando esse token caso ele seja fornecido.
 
 #### Diagrama completo do fluxo
 

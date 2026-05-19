@@ -1,7 +1,5 @@
 from fastapi import APIRouter, HTTPException
-
 from core.util.deps import AuthenticatedUser, UserServiceDeps
-
 from core.models.oauth_models import ResponseModel
 from core.models.user_models import (
     UserCreateType,
@@ -11,6 +9,31 @@ from core.models.user_models import (
 )
 
 user_router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@user_router.get("/", response_model=list[UserType])
+async def list_users(
+    authenticated_user: AuthenticatedUser, user_service: UserServiceDeps
+):
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        return await user_service.list_users()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@user_router.get("/search", response_model=list[UserType])
+async def search_users(
+    authenticated_user: AuthenticatedUser, query: str, user_service: UserServiceDeps
+):
+    try:
+        if not authenticated_user.manager:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        users = await user_service.search_users(query)
+        return users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @user_router.get("/{user_id}", response_model=UserType)
